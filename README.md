@@ -1,12 +1,39 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:020617,45:0e7490,100:06b6d4&height=230&section=header&text=CURE&fontSize=82&fontColor=ffffff&animation=fadeIn&fontAlignY=38&desc=Climate%20%26%20Utility%20Risk%20Engine&descAlignY=61&descSize=22" width="100%"/>
+<img
+  src="https://capsule-render.vercel.app/api?type=waving&height=220&section=header&text=CURE&fontSize=80&fontColor=ffffff&color=0:020617,50:0e7490,100:06b6d4&animation=fadeIn&fontAlignY=38&desc=Climate%20%26%20Utility%20Risk%20Engine&descAlignY=60&descSize=20"
+  width="100%"
+  alt="CURE - Climate & Utility Risk Engine"
+/>
 
 <br>
 
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=21&duration=2800&pause=900&color=22D3EE&center=true&vCenter=true&width=900&lines=Predict+water+shortages+before+they+become+emergencies.;Turn+climate+signals+into+actionable+decisions.;Measure+your+water+runway.;Think+ahead.+Act+before+the+shortage." alt="CURE animated tagline"/>
+<img
+  src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=21&duration=2800&pause=900&color=22D3EE&center=true&vCenter=true&width=850&lines=Predict+water+shortages+before+they+become+emergencies.;Turn+climate+signals+into+actionable+decisions.;Measure+your+water+runway.;Think+ahead.+Act+before+the+shortage."
+  alt="CURE animated tagline"
+/>
 
 <br><br>
+
+<a href="https://github.com/dhanush080607/CURE">
+  <img
+    src="https://img.shields.io/badge/🌍_Environmental_Hacks-2026-06b6d4?style=for-the-badge"
+    alt="Environmental Hacks 2026"
+  />
+</a>
+
+<a href="https://github.com/dhanush080607/CURE">
+  <img
+    src="https://img.shields.io/github/stars/dhanush080607/CURE?style=for-the-badge&color=22d3ee"
+    alt="GitHub Stars"
+  />
+</a>
+
+<br><br>
+
+### 💧 Know your water runway before you run out.
+
+</div>
 
 <a href="https://github.com/dhanush080607/CURE">
 <img src="https://img.shields.io/badge/🌍_Environmental_Hacks-2026-06b6d4?style=for-the-badge" alt="Environmental Hacks 2026"/>
