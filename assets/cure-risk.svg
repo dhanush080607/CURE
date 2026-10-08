@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360">
+<defs>
+  <linearGradient id="bg" x1="0" x2="1">
+    <stop offset="0" stop-color="#052e16"/>
+    <stop offset="0.55" stop-color="#166534"/>
+    <stop offset="1" stop-color="#365314"/>
+  </linearGradient>
+  <linearGradient id="water" x1="0" x2="1">
+    <stop offset="0" stop-color="#34d399"/>
+    <stop offset="1" stop-color="#84cc16"/>
+  </linearGradient>
+  <filter id="glow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M40 0H0V40" fill="none" stroke="#bbf7d0" stroke-opacity=".08"/>
+  </pattern>
+</defs>
+
+<rect width="1200" height="360" rx="28" fill="url(#bg)"/>
+<rect width="1200" height="360" rx="28" fill="url(#grid)"/>
+
+<!-- floating particles -->
+<g fill="#86efac">
+  <circle cx="90" cy="70" r="3"><animate attributeName="cy" values="70;45;70" dur="4s" repeatCount="indefinite"/></circle>
+  <circle cx="1050" cy="90" r="4"><animate attributeName="cy" values="90;120;90" dur="5s" repeatCount="indefinite"/></circle>
+  <circle cx="1120" cy="260" r="3"><animate attributeName="cy" values="260;230;260" dur="3.5s" repeatCount="indefinite"/></circle>
+  <circle cx="160" cy="280" r="4"><animate attributeName="cy" values="280;250;280" dur="4.5s" repeatCount="indefinite"/></circle>
+</g>
+
+<!-- title -->
+<text x="600" y="105" text-anchor="middle" fill="#f0fdf4" font-family="Arial, sans-serif" font-size="78" font-weight="800" letter-spacing="10">CURE</text>
+<text x="600" y="145" text-anchor="middle" fill="#bbf7d0" font-family="Arial, sans-serif" font-size="20">CLIMATE &amp; UTILITY RISK ENGINE</text>
+
+<!-- animated tank -->
+<rect x="425" y="185" width="350" height="95" rx="16" fill="#052e16" stroke="#86efac" stroke-width="2"/>
+<rect x="442" y="202" width="316" height="48" rx="10" fill="#14532d"/>
+<rect x="442" y="202" width="195" height="48" rx="10" fill="url(#water)" filter="url(#glow)">
+  <animate attributeName="width" values="175;225;195;210;195" dur="7s" repeatCount="indefinite"/>
+</rect>
+<path d="M442 215 Q470 202 500 215 T558 215 T616 215 T674 215 T732 215 T758 215" fill="none" stroke="#ecfccb" stroke-opacity=".8" stroke-width="2">
+  <animateTransform attributeName="transform" type="translate" values="0 0;12 0;0 0;-12 0;0 0" dur="3s" repeatCount="indefinite"/>
+</path>
+<text x="600" y="272" text-anchor="middle" fill="#f0fdf4" font-family="Arial, sans-serif" font-size="18" font-weight="700">WATER RUNWAY • 4.12 DAYS</text>
+
+<!-- status -->
+<circle cx="385" cy="232" r="10" fill="#22c55e">
+  <animate attributeName="r" values="8;13;8" dur="1.6s" repeatCount="indefinite"/>
+  <animate attributeName="opacity" values="1;.45;1" dur="1.6s" repeatCount="indefinite"/>
+</circle>
+<text x="350" y="270" text-anchor="middle" fill="#bbf7d0" font-family="Arial, sans-serif" font-size="16">LOW</text>
+
+<text x="600" y="325" text-anchor="middle" fill="#d9f99d" font-family="Arial, sans-serif" font-size="16">
+  Predict earlier • Understand climate • Act before shortage
+</text>
+</svg>

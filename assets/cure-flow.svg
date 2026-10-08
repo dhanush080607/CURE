@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 260">
+<defs>
+ <linearGradient id="g" x1="0" x2="1"><stop stop-color="#052e16"/><stop offset=".5" stop-color="#166534"/><stop offset="1" stop-color="#3f6212"/></linearGradient>
+</defs>
+<rect width="1000" height="260" rx="24" fill="url(#g)"/>
+<text x="500" y="48" text-anchor="middle" fill="#f0fdf4" font-family="Arial" font-size="24" font-weight="700">CURE RISK ENGINE</text>
+
+<g font-family="Arial" font-weight="700" text-anchor="middle">
+ <text x="175" y="105" fill="#86efac" font-size="19">LOW</text>
+ <text x="500" y="105" fill="#fde68a" font-size="19">WATCH</text>
+ <text x="825" y="105" fill="#fca5a5" font-size="19">HIGH</text>
+</g>
+
+<rect x="95" y="125" width="160" height="22" rx="11" fill="#14532d"/>
+<rect x="420" y="125" width="160" height="22" rx="11" fill="#713f12"/>
+<rect x="745" y="125" width="160" height="22" rx="11" fill="#7f1d1d"/>
+
+<circle cx="175" cy="136" r="8" fill="#22c55e">
+ <animate attributeName="r" values="6;12;6" dur="1.5s" repeatCount="indefinite"/>
+</circle>
+<circle cx="500" cy="136" r="8" fill="#f59e0b" opacity=".25">
+ <animate attributeName="opacity" values=".25;1;.25" dur="1.8s" repeatCount="indefinite"/>
+</circle>
+<circle cx="825" cy="136" r="8" fill="#ef4444" opacity=".18">
+ <animate attributeName="opacity" values=".18;1;.18" dur="1.2s" repeatCount="indefinite"/>
+</circle>
+
+<text x="175" y="190" fill="#bbf7d0" font-family="Arial" font-size="15" text-anchor="middle">Current supply appears stable</text>
+<text x="500" y="190" fill="#fde68a" font-family="Arial" font-size="15" text-anchor="middle">Review tanker planning soon</text>
+<text x="825" y="190" fill="#fecaca" font-family="Arial" font-size="15" text-anchor="middle">Plan a tanker immediately</text>
+</svg>

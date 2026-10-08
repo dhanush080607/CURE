@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 260">
+<defs>
+ <linearGradient id="b" x1="0" x2="1"><stop stop-color="#052e16"/><stop offset=".5" stop-color="#14532d"/><stop offset="1" stop-color="#365314"/></linearGradient>
+ <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0L9 3L0 6Z" fill="#86efac"/></marker>
+</defs>
+<rect width="1200" height="260" rx="24" fill="url(#b)"/>
+<g font-family="Arial" text-anchor="middle">
+ <g fill="#f0fdf4" font-weight="700" font-size="17">
+  <text x="120" y="75">💧 INPUT</text><text x="350" y="75">📈 USAGE</text><text x="580" y="75">🌡️ CLIMATE</text><text x="810" y="75">🧠 ENGINE</text><text x="1050" y="75">🚦 ACTION</text>
+ </g>
+ <g fill="#bbf7d0" font-size="13">
+  <text x="120" y="102">Tank level</text><text x="350" y="102">Consumption</text><text x="580" y="102">Weather</text><text x="810" y="102">Runway</text><text x="1050" y="102">Risk + AI</text>
+ </g>
+</g>
+<g stroke="#86efac" stroke-width="3" marker-end="url(#arrow)">
+ <path d="M180 90H285"><animate attributeName="stroke-dashoffset" from="30" to="0" dur="1s" repeatCount="indefinite"/></path>
+ <path d="M410 90H515"/>
+ <path d="M640 90H745"/>
+ <path d="M870 90H985"/>
+</g>
+<g fill="#86efac">
+ <circle cx="230" cy="90" r="5"><animate attributeName="cx" values="185;280;185" dur="2s" repeatCount="indefinite"/></circle>
+ <circle cx="460" cy="90" r="5"><animate attributeName="cx" values="415;510;415" dur="2s" begin=".4s" repeatCount="indefinite"/></circle>
+ <circle cx="690" cy="90" r="5"><animate attributeName="cx" values="645;740;645" dur="2s" begin=".8s" repeatCount="indefinite"/></circle>
+ <circle cx="920" cy="90" r="5"><animate attributeName="cx" values="875;980;875" dur="2s" begin="1.2s" repeatCount="indefinite"/></circle>
+</g>
+<text x="600" y="190" text-anchor="middle" fill="#d9f99d" font-family="Arial" font-size="17">DATA → INTELLIGENCE → DECISION → ACTION</text>
+</svg>
