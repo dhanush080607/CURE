@@ -1,327 +1,277 @@
 <div align="center">
 
-<img
-  src="https://capsule-render.vercel.app/api?type=waving&height=220&section=header&text=CURE&fontSize=80&fontColor=ffffff&color=0:020617,50:0e7490,100:06b6d4&animation=fadeIn&fontAlignY=38&desc=Climate%20%26%20Utility%20Risk%20Engine&descAlignY=60&descSize=20"
-  width="100%"
-  alt="CURE - Climate & Utility Risk Engine"
-/>
+# 🌿 CURE
+
+### Climate & Utility Risk Engine
+
+**Predict water shortages before they become emergencies.**
 
 <br>
 
-<img
-  src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=21&duration=2800&pause=900&color=22D3EE&center=true&vCenter=true&width=850&lines=Predict+water+shortages+before+they+become+emergencies.;Turn+climate+signals+into+actionable+decisions.;Measure+your+water+runway.;Think+ahead.+Act+before+the+shortage."
-  alt="CURE animated tagline"
-/>
+[![Environmental Hacks](https://img.shields.io/badge/Environmental%20Hacks-2026-16a34a?style=for-the-badge)](https://github.com/dhanush080607/CURE)
+[![React](https://img.shields.io/badge/React-18-61dafb?style=for-the-badge\&logo=react\&logoColor=white)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?style=for-the-badge\&logo=fastapi\&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Python](https://img.shields.io/badge/Python-3.x-3776ab?style=for-the-badge\&logo=python\&logoColor=white)](https://www.python.org/)
+[![Ollama](https://img.shields.io/badge/Ollama-Local%20AI-111827?style=for-the-badge)](https://ollama.com/)
+
+<br>
+
+[![GitHub stars](https://img.shields.io/github/stars/dhanush080607/CURE?style=flat-square\&logo=github)](https://github.com/dhanush080607/CURE/stargazers)
+[![Last commit](https://img.shields.io/github/last-commit/dhanush080607/CURE?style=flat-square)](https://github.com/dhanush080607/CURE/commits/main)
+[![Issues](https://img.shields.io/github/issues/dhanush080607/CURE?style=flat-square)](https://github.com/dhanush080607/CURE/issues)
 
 <br><br>
 
-<a href="https://github.com/dhanush080607/CURE">
-  <img
-    src="https://img.shields.io/badge/🌍_Environmental_Hacks-2026-06b6d4?style=for-the-badge"
-    alt="Environmental Hacks 2026"
-  />
-</a>
-
-<a href="https://github.com/dhanush080607/CURE">
-  <img
-    src="https://img.shields.io/github/stars/dhanush080607/CURE?style=for-the-badge&color=22d3ee"
-    alt="GitHub Stars"
-  />
-</a>
-
-<br><br>
-
-### 💧 Know your water runway before you run out.
-
-</div>
-
-<a href="https://github.com/dhanush080607/CURE">
-<img src="https://img.shields.io/badge/🌍_Environmental_Hacks-2026-06b6d4?style=for-the-badge" alt="Environmental Hacks 2026"/>
-</a>
-
-<a href="https://github.com/dhanush080607/CURE">
-<img src="https://img.shields.io/github/stars/dhanush080607/CURE?style=for-the-badge&color=22d3ee" alt="GitHub Stars"/>
-</a>
-
-<a href="https://github.com/dhanush080607/CURE">
-<img src="https://img.shields.io/github/last-commit/dhanush080607/CURE?style=for-the-badge&color=0ea5e9" alt="Last Commit"/>
-</a>
-
-<br><br>
-
-<img src="https://img.shields.io/badge/React-Vite-61DAFB?style=flat-square&logo=react&logoColor=111827"/>
-<img src="https://img.shields.io/badge/FastAPI-Python-009688?style=flat-square&logo=fastapi&logoColor=white"/>
-<img src="https://img.shields.io/badge/Ollama-Local_AI-black?style=flat-square"/>
-<img src="https://img.shields.io/badge/Open--Meteo-Weather-06b6d4?style=flat-square"/>
-<img src="https://img.shields.io/badge/Tailwind_CSS-38BDF8?style=flat-square&logo=tailwindcss&logoColor=white"/>
-
-<br><br>
-
-### 💧 Know your water runway before you run out.
+> 🌍 **Climate signals → Water intelligence → Better decisions**
 
 </div>
 
 ---
 
-# 🌊 THE IDEA
+## 🌱 The Problem
 
-<div align="center">
+Water management often answers one simple question:
 
-## What if a water tank could tell you when it will become a problem?
+> **How much water do we have right now?**
 
-</div>
+But that isn't enough.
 
-**CURE — Climate & Utility Risk Engine** — combines water usage, tank conditions, climate signals, and weather forecasts to estimate how long the current water supply can last.
+A tank may look healthy today while increasing consumption and rising temperatures could reduce its remaining supply much faster than expected.
 
-Instead of asking:
+### CURE asks a better question:
 
-> **"How much water is left?"**
+> **⏳ How long will our current water supply last?**
 
-CURE asks:
+---
 
-> **"How long will our current water supply last?"**
-
-### The intelligence pipeline
+## 🧭 What CURE Does
 
 ```text
-💧 TANK LEVEL
-      +
-📈 CONSUMPTION HISTORY
-      +
-🌡️ HEAT CONDITIONS
-      +
-☁️ WEATHER FORECAST
-      │
-      ▼
-┌──────────────────────────────┐
-│       CURE RISK ENGINE       │
-└──────────────┬───────────────┘
-               │
-               ▼
-        ⏳ WATER RUNWAY
-               │
-       ┌───────┼───────┐
-       ▼       ▼       ▼
-     🟢 LOW  🟡 WATCH  🔴 HIGH
-       │       │       │
-     Stable  Monitor   Act
+┌───────────────────────────────────────────────────────────┐
+│                         CURE                              │
+│              CLIMATE & UTILITY RISK ENGINE               │
+├───────────────────────────────────────────────────────────┤
+│                                                           │
+│   💧 Tank       📈 Consumption      🌡️ Climate           │
+│   Level         History             Conditions            │
+│      │               │                   │                │
+│      └───────────────┼───────────────────┘                │
+│                      ▼                                    │
+│               ┌──────────────┐                            │
+│               │  RISK ENGINE │                            │
+│               └───────┬──────┘                            │
+│                       ▼                                   │
+│                ⏳ WATER RUNWAY                            │
+│                       │                                   │
+│             ┌─────────┼─────────┐                         │
+│             ▼         ▼         ▼                         │
+│           🟢 LOW   🟡 WATCH   🔴 HIGH                    │
+│             │         │         │                         │
+│          Monitor   Review      Act                        │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-# ⚡ CURE IN 30 SECONDS
+# ⚡ CURE AT A GLANCE
 
-<div align="center">
-
-| 💧 Measure | 📈 Analyze | 🌡️ Adjust | ⏳ Project | 🚦 Act |
-| :--------: | :--------: | :--------: | :-------: | :----: |
-|    Tank    |    Usage   |    Heat    |   Runway  |  Risk  |
-|    Level   |    Trend   |   Impact   |    Days   | Action |
-
-</div>
-
-```text
-              ┌─────────────────┐
-              │   USER INPUT    │
-              └────────┬────────┘
-                       ↓
-              ┌─────────────────┐
-              │ WATER + USAGE   │
-              └────────┬────────┘
-                       ↓
-              ┌─────────────────┐
-              │ CLIMATE SIGNALS │
-              └────────┬────────┘
-                       ↓
-              ┌─────────────────┐
-              │   RISK ENGINE   │
-              └────────┬────────┘
-                       ↓
-              ┌─────────────────┐
-              │ WATER RUNWAY ⏳  │
-              └────────┬────────┘
-                       ↓
-                ┌──────┴──────┐
-                ↓             ↓
-             🚦 RISK       🤖 AI
-                │             │
-                └──────┬──────┘
-                       ↓
-                 ACTIONABLE
-                  DECISION
-```
+| Signal      | What CURE Uses                |
+| ----------- | ----------------------------- |
+| 💧 Water    | Tank capacity + current level |
+| 📈 Usage    | Recent daily consumption      |
+| 🌡️ Heat    | Maximum forecast temperature  |
+| ☁️ Weather  | Open-Meteo forecast           |
+| 🧮 Engine   | Projected daily consumption   |
+| ⏳ Output    | Water runway in days          |
+| 🚦 Decision | LOW / WATCH / HIGH            |
+| 🤖 AI       | Human-readable explanation    |
 
 ---
 
-# 🧠 HOW CURE THINKS
+# 🧠 How CURE Thinks
 
-## 01 — 💧 Available Water
-
-CURE first determines how much water is actually available.
+## 01 · 💧 Calculate Available Water
 
 ```text
 Available Water
-       =
-Tank Capacity × Current Tank Level
+       │
+       ▼
+Tank Capacity × Current Level %
+       │
+       ▼
+Water Available
 ```
 
 ### Example
 
 ```text
 50,000 L × 62%
-       ↓
-31,000 L available
+        │
+        ▼
+31,000 L
 ```
 
 ---
 
-## 02 — 📈 Consumption Intelligence
+## 02 · 📈 Understand Consumption
 
-CURE analyzes recent daily consumption.
+CURE analyzes recent daily usage.
 
 ```text
-                    CONSUMPTION
+                    RECENT USAGE
                          │
-          ┌──────────────┼──────────────┐
-          ▼              ▼              ▼
-      INCREASING       STABLE       DECREASING
-          │              │              │
-          ▼              ▼              ▼
-       Higher          Normal         Lower
-       demand          pattern        demand
+             ┌───────────┼───────────┐
+             ▼           ▼           ▼
+        INCREASING      STABLE     DECREASING
+             │           │           │
+             ▼           ▼           ▼
+         Higher       Consistent     Lower
+         demand         usage        demand
 ```
 
 ---
 
-## 03 — 🌡️ Climate Adjustment
+## 03 · 🌡️ Account for Heat
 
-Upcoming heat conditions influence projected demand.
+CURE applies an **illustrative MVP heat heuristic** to projected demand.
 
-|  Condition |    Status   | Adjustment |
-| :--------: | :---------: | ---------: |
-|  `< 32°C`  |  🟢 NORMAL  |       `0%` |
-| `32–<35°C` | 🟡 MODERATE |       `5%` |
-| `35–<38°C` | 🟠 ELEVATED |      `10%` |
-|  `≥ 38°C`  |   🔴 HIGH   |      `15%` |
+| Temperature | Heat Status | Demand Adjustment |
+| ----------: | :---------: | ----------------: |
+|    `< 32°C` |  🟢 NORMAL  |                0% |
+|  `32–<35°C` | 🟡 MODERATE |                5% |
+|  `35–<38°C` | 🟠 ELEVATED |               10% |
+|    `≥ 38°C` |   🔴 HIGH   |               15% |
 
-> ⚠️ These are **illustrative MVP heuristics**, not scientific constants.
+> **Note:** These percentages are prototype heuristics, not scientific or medical thresholds.
 
 ---
 
-## 04 — ⏳ Water Runway
+# ⏳ The Water Runway
 
-The heart of CURE.
+The core CURE metric is the estimated number of days the available supply can support projected daily usage.
 
 ```text
                  AVAILABLE WATER
                         │
                         ▼
+                       ÷
+                        │
+                        ▼
+             PROJECTED DAILY USAGE
+                        │
+                        ▼
                  ┌─────────────┐
-                 │      ÷      │
-                 └──────┬──────┘
-                        │
-                        ▼
-              PROJECTED DAILY USE
-                        │
-                        ▼
-                 ⏳ WATER RUNWAY
+                 │   RUNWAY    │
+                 │             │
+                 │  4.12 DAYS  │
+                 └─────────────┘
 ```
 
-> **Water runway = estimated days of supply remaining.**
+### Why runway matters
+
+A tank percentage alone doesn't tell the whole story.
+
+```text
+Tank A → 60% → LOW usage  → Longer runway
+Tank B → 60% → HIGH usage → Shorter runway
+```
+
+Same tank level.
+
+Different future.
 
 ---
 
-# 🚦 THE CURE RISK SIGNAL
+# 🚦 Risk Engine
 
 <div align="center">
 
 ### 🟢 LOW
 
-```text
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        CURRENT SUPPLY
-          APPEARS STABLE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+**Current water supply appears stable.**
+
+<br>
 
 ### 🟡 WATCH
 
-```text
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        MONITOR & REVIEW
-       TANKER PLANNING SOON
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+**Review tanker planning soon.**
+
+<br>
 
 ### 🔴 HIGH
 
-```text
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        ACTION REQUIRED
-     PLAN TANKER IMMEDIATELY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+**Plan a tanker immediately.**
 
 </div>
 
----
-
-# 🔥 CLIMATE-AWARE WATER INTELLIGENCE
-
-CURE doesn't treat water availability as a static number.
+### Decision logic
 
 ```text
-                    WEATHER
-                       │
-                       ▼
-                 MAX TEMPERATURE
-                       │
-                       ▼
-                  HEAT CONDITIONS
-                       │
-                       ▼
-                 DEMAND ADJUSTMENT
-                       │
-                       ▼
-              PROJECTED DAILY DEMAND
-                       │
-                       ▼
-                  WATER RUNWAY
+                    WATER RUNWAY
+                         │
+             ┌───────────┼───────────┐
+             ▼           ▼           ▼
+           ≥ 4 days    2–<4 days    < 2 days
+             │           │           │
+             ▼           ▼           ▼
+          🟢 LOW      🟡 WATCH     🔴 HIGH
 ```
 
-That means the same tank level can produce a different projected runway when environmental conditions change.
+---
+
+# 🔥 Climate-Aware Intelligence
+
+CURE does not treat water as a static resource.
+
+```text
+                 WEATHER FORECAST
+                         │
+                         ▼
+                 MAX TEMPERATURE
+                         │
+                         ▼
+                  HEAT CONDITION
+                         │
+                         ▼
+                  DEMAND CHANGE
+                         │
+                         ▼
+              PROJECTED DAILY USAGE
+                         │
+                         ▼
+                   WATER RUNWAY
+```
+
+This allows the system to account for environmental conditions when projecting future demand.
 
 ---
 
-# 📊 A REAL CURE SCENARIO
-
-<div align="center">
+# 📊 Real CURE Scenario
 
 ```text
-╭──────────────────────────────────────────────╮
-│              CURE RISK SNAPSHOT              │
+┌──────────────────────────────────────────────┐
+│               CURE SNAPSHOT                  │
 ├──────────────────────────────────────────────┤
 │                                              │
-│   TANK CAPACITY              50,000 L        │
-│   CURRENT LEVEL                  62%         │
-│   AVAILABLE WATER            31,000 L        │
+│  Tank Capacity              50,000 L         │
+│  Current Level                   62%         │
+│  Available Water             31,000 L        │
 │                                              │
-│   AVG. DAILY USE          7,528.57 L/day     │
-│   TEMPERATURE                 30.8°C         │
-│   HEAT ADJUSTMENT                0%          │
+│  Avg. Daily Usage          7,528.57 L/day    │
+│  Temperature                  30.8°C         │
+│  Heat Adjustment                  0%         │
 │                                              │
-│   WATER RUNWAY                4.12 DAYS      │
+│  Water Runway                4.12 days       │
 │                                              │
-│                  🟢 LOW                      │
+│  Risk                         🟢 LOW          │
 │                                              │
-╰──────────────────────────────────────────────╯
+└──────────────────────────────────────────────┘
 ```
-
-</div>
 
 ### System decision
 
-> **Water runway is 4.12 days based on current projected consumption.**
+> Water runway is **4.12 days** based on current projected consumption.
 
 ### Recommendation
 
@@ -329,69 +279,85 @@ That means the same tank level can produce a different projected runway when env
 
 ---
 
-# 🧩 ARCHITECTURE
+# 🏗️ Architecture
 
 ```mermaid
-flowchart TD
+flowchart TB
 
-    A["🌐 CURE Web App<br/>React + Vite + Tailwind"] --> B["⚡ FastAPI"]
+    USER["👤 User"]
 
-    B --> C["📈 Consumption Engine"]
-    B --> D["🌡️ Heat Engine"]
-    B --> E["☁️ Weather Service"]
+    FRONTEND["🌿 React + Vite<br/>Tailwind + Recharts"]
 
-    C --> F["🧠 Risk Engine"]
-    D --> F
-    E --> F
+    API["⚡ FastAPI"]
 
-    F --> G["⏳ Water Runway"]
-    F --> H["🚦 Risk Level"]
-    F --> I["📋 Recommendation"]
+    CONSUMPTION["📈 Consumption Engine"]
 
-    G --> J["🤖 CURE AI"]
-    H --> J
-    I --> J
+    HEAT["🌡️ Heat Engine"]
 
-    J --> K["💬 Human-Readable Decision"]
+    WEATHER["☁️ Open-Meteo"]
 
-    style A fill:#0e7490,color:#fff
-    style B fill:#0369a1,color:#fff
-    style F fill:#0891b2,color:#fff
-    style J fill:#7c3aed,color:#fff
-    style K fill:#059669,color:#fff
+    RISK["🧠 CURE Risk Engine"]
+
+    AI["🤖 Ollama<br/>Local LLM"]
+
+    RESULT["🚦 Risk + Recommendation"]
+
+    USER --> FRONTEND
+    FRONTEND --> API
+
+    API --> CONSUMPTION
+    API --> HEAT
+    API --> WEATHER
+
+    CONSUMPTION --> RISK
+    HEAT --> RISK
+    WEATHER --> HEAT
+
+    RISK --> RESULT
+    RESULT --> AI
+    AI --> FRONTEND
 ```
 
 ---
 
-# 🤖 AI — BUT WITH GUARDRAILS
+# 🤖 AI With Guardrails
 
-CURE deliberately separates **calculation** from **explanation**.
+CURE intentionally separates **decision-making** from **language generation**.
 
 ```text
-                 REAL DATA
-                    │
-                    ▼
-          ┌───────────────────┐
-          │ DETERMINISTIC     │
-          │ RISK ENGINE       │
-          └─────────┬─────────┘
-                    │
-                    │ authoritative result
-                    ▼
-          ┌───────────────────┐
-          │      CURE AI      │
-          │                   │
-          │    Explain        │
-          │    Summarize      │
-          │    Communicate    │
-          └─────────┬─────────┘
-                    │
-                    ▼
-             HUMAN-READABLE
-                DECISION
+┌───────────────────────┐
+│       REAL DATA       │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│   DETERMINISTIC       │
+│     RISK ENGINE       │
+│                       │
+│ • Water runway        │
+│ • Risk level          │
+│ • Risk reason         │
+│ • Recommendation      │
+└───────────┬───────────┘
+            │
+            │ authoritative result
+            ▼
+┌───────────────────────┐
+│       CURE AI         │
+│                       │
+│ Explain               │
+│ Summarize             │
+│ Communicate           │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│  HUMAN-READABLE       │
+│      DECISION         │
+└───────────────────────┘
 ```
 
-## The rule
+## Core principle
 
 ```text
 CALCULATION ≠ GENERATION
@@ -401,13 +367,13 @@ CALCULATION ≠ GENERATION
 
 **The AI explains.**
 
-This keeps the environmental calculation deterministic while still giving users a natural-language interface.
+This keeps the core environmental calculation deterministic while using AI as the communication layer.
 
 ---
 
-# 🌐 WEATHER INTELLIGENCE
+# 🌦️ Weather Intelligence
 
-CURE retrieves forecast information through **Open-Meteo**.
+CURE uses **Open-Meteo** for forecast data.
 
 ```text
 Location
@@ -422,60 +388,68 @@ Temperature Forecast
 Heat Engine
    │
    ▼
-Projected Water Demand
+Projected Demand
    │
    ▼
 Water Runway
 ```
 
-The live forecast values come from the weather service rather than being manually hardcoded into the forecast flow.
+The live forecast is retrieved from the weather service rather than manually entering forecast temperatures.
 
 ---
 
-# 🛠️ TECH STACK
+# 🛠️ Technology Stack
 
 <div align="center">
 
-| Layer              | Technology                  |
-| :----------------- | :-------------------------- |
-| 🎨 Frontend        | React + Vite + Tailwind CSS |
-| 📊 Visualization   | Recharts                    |
-| ⚡ Backend          | FastAPI                     |
-| 🐍 Language        | Python                      |
-| 🧠 AI              | Ollama + llama3.2:3b        |
-| 🌦️ Weather        | Open-Meteo                  |
-| 🛡️ Validation     | Pydantic                    |
-| 🌐 HTTP            | HTTPX                       |
-| 🔧 Version Control | Git + GitHub                |
+| Layer              | Technology           |
+| :----------------- | :------------------- |
+| 🎨 Frontend        | React + Vite         |
+| 🎨 Styling         | Tailwind CSS         |
+| 📊 Charts          | Recharts             |
+| ⚡ Backend          | FastAPI              |
+| 🐍 Language        | Python               |
+| 🤖 AI              | Ollama + llama3.2:3b |
+| 🌦️ Weather        | Open-Meteo           |
+| 🛡️ Validation     | Pydantic             |
+| 🌐 HTTP            | HTTPX                |
+| 🔧 Version Control | Git + GitHub         |
 
 </div>
 
 ---
 
-# 🧪 TESTED & VERIFIED
+# 🧪 Tested Scenarios
 
-CURE has been tested across multiple operational conditions.
+CURE has been tested against multiple operational scenarios.
 
-<div align="center">
+| Scenario        |        Runway |  Result  |
+| --------------- | ------------: | :------: |
+| Normal supply   | **4.12 days** |  🟢 LOW  |
+| Reduced supply  | **2.99 days** | 🟡 WATCH |
+| Critical supply | **1.59 days** |  🔴 HIGH |
+| High heat       | **2.72 days** | 🟡 WATCH |
 
-| Scenario        |  Water Runway |    Result    |
-| :-------------- | ------------: | :----------: |
-| Normal supply   | **4.12 days** |  🟢 **LOW**  |
-| Reduced supply  | **2.99 days** | 🟡 **WATCH** |
-| Critical supply | **1.59 days** |  🔴 **HIGH** |
-| High heat       | **2.72 days** | 🟡 **WATCH** |
+---
 
-</div>
-
-## Input validation
+## ✅ Validation
 
 ```text
 ✓ Negative tank capacity rejected
-✓ Tank level > 100% rejected
+
+✓ Tank level above 100% rejected
+
 ✓ Negative consumption rejected
+
 ✓ Invalid latitude rejected
+
 ✓ Invalid longitude rejected
-✓ Zero-consumption edge case handled
+
+✓ Zero-consumption scenario handled
+
+✓ Weather request validated
+
+✓ Risk result generated successfully
 ```
 
 ---
@@ -483,70 +457,69 @@ CURE has been tested across multiple operational conditions.
 # 🖥️ PRODUCT FLOW
 
 ```text
-                         👤 USER
-                           │
-                           ▼
-                  ┌─────────────────┐
-                  │ Enter Tank Data │
-                  └────────┬────────┘
-                           ▼
-                  ┌─────────────────┐
-                  │ Add Consumption │
-                  └────────┬────────┘
-                           ▼
-                  ┌─────────────────┐
-                  │ Fetch Weather   │
-                  └────────┬────────┘
-                           ▼
-                  ┌─────────────────┐
-                  │ Run Risk Engine │
-                  └────────┬────────┘
-                           ▼
-                  ┌─────────────────┐
-                  │ Water Runway ⏳ │
-                  └────────┬────────┘
-                           ▼
-                       🚦 RISK
-                           │
-                 ┌─────────┼─────────┐
-                 ▼         ▼         ▼
-                🟢        🟡        🔴
-                LOW      WATCH      HIGH
-                 │         │         │
-                 └─────────┼─────────┘
-                           ▼
-                       🤖 CURE AI
-                           │
-                           ▼
-                    ACTIONABLE
-                     DECISION
+             👤 USER
+                │
+                ▼
+       ┌─────────────────┐
+       │   Tank Inputs   │
+       └────────┬────────┘
+                ▼
+       ┌─────────────────┐
+       │ Usage History   │
+       └────────┬────────┘
+                ▼
+       ┌─────────────────┐
+       │ Weather Fetch   │
+       └────────┬────────┘
+                ▼
+       ┌─────────────────┐
+       │  Risk Engine    │
+       └────────┬────────┘
+                ▼
+       ┌─────────────────┐
+       │ Water Runway ⏳ │
+       └────────┬────────┘
+                ▼
+           ┌────┴────┐
+           ▼         ▼
+        🚦 RISK    🤖 AI
+           │         │
+           └────┬────┘
+                ▼
+       ┌─────────────────┐
+       │    DECISION     │
+       └─────────────────┘
 ```
 
 ---
 
-# ☁️ AWS & OPEN-SOURCE PHILOSOPHY
+# ☁️ AWS & OPEN-SOURCE
 
-CURE follows a **local-first architecture**.
+CURE uses a **local-first architecture**.
 
-The core environmental intelligence does not depend on a paid cloud account.
+The environmental calculation and AI explanation can run locally without requiring a paid cloud account.
 
-The architecture is intentionally modular so infrastructure can evolve independently from the risk engine.
+The system is intentionally modular so deployment infrastructure can evolve independently from the core risk engine.
 
-### Design principle
+### Design philosophy
 
-<div align="center">
+```text
+Portable Intelligence
+        +
+Modular Infrastructure
+        +
+Practical Environmental Impact
+        =
+             CURE
+```
 
-> **Portable intelligence. Modular infrastructure. Practical environmental impact.**
-
-</div>
-
-The project is designed to integrate with the AWS/open-source ecosystem as the deployment architecture evolves.
+The project is designed with future AWS/open-source deployment in mind.
 
 ---
 
-# 🚀 RUN CURE LOCALLY
+# 🚀 RUN LOCALLY
 
-## 1. Clone the repository
+## 1. Clone
 
 ```bash
 git clone https://github.com/dhanush080607/CURE.git
@@ -557,6 +530,8 @@ cd CURE
 
 ## 2. Start Ollama
 
+Make sure Ollama is installed and running.
+
 ```bash
 ollama pull llama3.2:3b
 ollama run llama3.2:3b
@@ -565,6 +540,8 @@ ollama run llama3.2:3b
 ---
 
 ## 3. Start the backend
+
+Open a terminal:
 
 ```powershell
 cd backend
@@ -578,13 +555,13 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-### Backend
+### API
 
 ```text
 http://127.0.0.1:8000
 ```
 
-### Swagger API
+### Swagger
 
 ```text
 http://127.0.0.1:8000/docs
@@ -635,6 +612,7 @@ CURE/
 │   │   ├── App.css
 │   │   ├── index.css
 │   │   └── main.jsx
+│   │
 │   ├── package.json
 │   └── vite.config.js
 │
@@ -647,53 +625,55 @@ CURE/
 
 ---
 
-# 🌍 WHY IT MATTERS
+# 🌍 WHY CURE?
 
-Water scarcity is not only about **how much water exists**.
+Water scarcity is not simply a question of quantity.
 
-It is also about:
+It's a question of **time**.
 
 ```text
-WHEN
- ↓
-WILL
- ↓
-THE
- ↓
-WATER
- ↓
-RUN
- ↓
-OUT?
+          HOW MUCH?
+              │
+              ▼
+           TODAY
+              │
+              ▼
+         ┌─────────┐
+         │   CURE  │
+         └────┬────┘
+              │
+              ▼
+          HOW LONG?
+              │
+              ▼
+        ⏳ WATER RUNWAY
 ```
-
-CURE tries to answer that question **before the shortage happens**.
 
 ### Potential applications
 
 ```text
 🏠 Homes
-   ↓
-🏢 Apartments
-   ↓
-🏫 Schools
-   ↓
-🏥 Hospitals
-   ↓
-🏭 Facilities
-   ↓
-🏙️ Communities
+   │
+   ├── 🏢 Apartments
+   │
+   ├── 🏫 Schools
+   │
+   ├── 🏥 Hospitals
+   │
+   ├── 🏭 Facilities
+   │
+   └── 🏙️ Communities
 ```
 
 ---
 
 # 🔮 ROADMAP
 
-### 🟢 CURRENT
+## 🟢 Current
 
 * [x] Water runway
 * [x] Consumption analysis
-* [x] Trend detection
+* [x] Consumption trend
 * [x] Heat adjustment
 * [x] Weather integration
 * [x] Risk classification
@@ -703,7 +683,7 @@ CURE tries to answer that question **before the shortage happens**.
 * [x] Interactive dashboard
 * [x] Input validation
 
-### 🟡 NEXT
+## 🟡 Next
 
 * [ ] Historical forecasting
 * [ ] Smarter demand prediction
@@ -712,7 +692,7 @@ CURE tries to answer that question **before the shortage happens**.
 * [ ] Multi-tank monitoring
 * [ ] Automated alerts
 
-### 🔵 FUTURE
+## 🔵 Future
 
 * [ ] IoT tank sensors
 * [ ] Real-time monitoring
@@ -722,15 +702,15 @@ CURE tries to answer that question **before the shortage happens**.
 
 ---
 
-# 🏆 BUILT FOR ENVIRONMENTAL HACKS
+# 🏆 ENVIRONMENTAL HACKS 2026
 
 <div align="center">
 
-<img src="https://img.shields.io/badge/WeMakeDevs-AWS%20Environmental%20Hacks%202026-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white"/>
+<img src="https://img.shields.io/badge/WE%20MAKE%20DEVS-Environmental%20Hacks-16a34a?style=for-the-badge"/>
 
 <br><br>
 
-### 🌱 Environmental Intelligence
+### 🌱 Built around environmental intelligence
 
 **Turning climate signals into practical utility decisions.**
 
@@ -743,22 +723,24 @@ CURE tries to answer that question **before the shortage happens**.
 <div align="center">
 
 <a href="https://github.com/dhanush080607">
-<img src="https://github.com/dhanush080607.png" width="100px" alt="Dhanush"/>
+<img src="https://github.com/dhanush080607.png" width="90" alt="Dhanush"/>
 </a>
-&nbsp;&nbsp;&nbsp;
+
+    
+
 <a href="https://github.com/KCDharshan9">
-<img src="https://github.com/KCDharshan9.png" width="100px" alt="KCDharshan9"/>
+<img src="https://github.com/KCDharshan9.png" width="90" alt="KCDharshan9"/>
 </a>
-&nbsp;&nbsp;&nbsp;
+
+    
+
 <a href="https://github.com/FaheedBasha123">
-<img src="https://github.com/FaheedBasha123.png" width="100px" alt="FaheedBasha123"/>
+<img src="https://github.com/FaheedBasha123.png" width="90" alt="FaheedBasha123"/>
 </a>
 
-<br>
+<br><br>
 
-<b>Dhanush</b>
- •  <b>KCDharshan9</b>
- •  <b>FaheedBasha123</b>
+**Dhanush**  •  **KCDharshan9**  •  **FaheedBasha123**
 
 <br><br>
 
@@ -768,82 +750,64 @@ CURE tries to answer that question **before the shortage happens**.
 
 ---
 
-# 📈 PROJECT PULSE
+# 📊 GITHUB
 
 <div align="center">
 
-<a href="https://github.com/dhanush080607/CURE">
-<img src="https://github-readme-stats.vercel.app/api/pin/?username=dhanush080607&repo=CURE&theme=tokyonight&hide_border=true&bg_color=020617&title_color=22d3ee&text_color=cbd5e1&icon_color=06b6d4" alt="CURE GitHub repository"/>
-</a>
+[![GitHub Repository](https://img.shields.io/badge/VIEW%20REPOSITORY-GitHub-181717?style=for-the-badge\&logo=github)](https://github.com/dhanush080607/CURE)
+
+[![Issues](https://img.shields.io/badge/REPORT-ISSUE-dc2626?style=for-the-badge\&logo=github)](https://github.com/dhanush080607/CURE/issues)
+
+[![Pull Requests](https://img.shields.io/badge/OPEN-PULL%20REQUEST-16a34a?style=for-the-badge\&logo=github)](https://github.com/dhanush080607/CURE/pulls)
 
 </div>
 
 ---
 
-# 🔗 PROJECT LINKS
-
-<div align="center">
-
-<a href="https://github.com/dhanush080607/CURE">
-<img src="https://img.shields.io/badge/💻_SOURCE_CODE-GitHub-181717?style=for-the-badge&logo=github"/>
-</a>
-
-<a href="https://github.com/dhanush080607/CURE/issues">
-<img src="https://img.shields.io/badge/🐛_ISSUES-Report-ef4444?style=for-the-badge&logo=github"/>
-</a>
-
-<a href="https://github.com/dhanush080607/CURE/pulls">
-<img src="https://img.shields.io/badge/🔀_PULL_REQUESTS-Contribute-22c55e?style=for-the-badge&logo=github"/>
-</a>
-
-</div>
-
----
-
-# 💫 THE VISION
+# 💚 THE VISION
 
 <div align="center">
 
 ```text
-             DATA
-               │
-               ▼
-        ┌──────────────┐
-        │ INTELLIGENCE │
-        └──────┬───────┘
-               │
-               ▼
-          DECISION
-               │
-               ▼
-            ACTION
-               │
-               ▼
-          🌍 IMPACT
+                 DATA
+                  │
+                  ▼
+           ┌─────────────┐
+           │ INTELLIGENCE│
+           └──────┬──────┘
+                  │
+                  ▼
+              DECISION
+                  │
+                  ▼
+                ACTION
+                  │
+                  ▼
+             🌍 IMPACT
 ```
 
 <br>
 
-### CURE is not just another dashboard.
+## CURE is not just another dashboard.
 
 ### It's a step toward utilities that can **think ahead**.
 
 <br>
 
-### 💧 Predict earlier.
+**💧 Predict earlier.**
 
-### 🌡️ Understand climate.
+**🌡️ Understand climate.**
 
-### 📊 Use resources smarter.
+**📊 Use resources smarter.**
 
-### 🌍 Act before the shortage.
+**🌍 Act before the shortage.**
 
 <br>
 
-<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=18&duration=2600&pause=700&color=22D3EE&center=true&vCenter=true&width=650&lines=Measure.;Predict.;Decide.;Act.;CURE." alt="CURE ending animation"/>
+---
 
-<br><br>
+### Built with purpose. Designed for impact. 🌱
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:06b6d4,50:0e7490,100:020617&height=140&section=footer&animation=fadeIn" width="100%"/>
+**CURE — Climate & Utility Risk Engine**
 
 </div>
