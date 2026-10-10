@@ -1,48 +1,56 @@
-import { useState } from "react";
-import { REGIONAL_ALERTS } from "../data/mockWeatherData";
 import { aqiTone } from "../data/liveWeather";
 
-const POLLUTANTS = (loc) => [
-  { label: "PM2.5", value: loc.pm25, max: 75 },
-  { label: "PM10", value: loc.pm10, max: 150 },
+const POLLUTANTS = [
+  { label: "PM2.5", key: "pm25", max: 75 },
+  { label: "PM10", key: "pm10", max: 150 },
 ];
 
-export default function AirQualityAndAlerts({ location }) {
-  const [open, setOpen] = useState(null);
-  const tone = aqiTone(location.aqi);
+const THRESHOLDS = [
+  { label: "PM2.5 annual (WHO)", value: "5 \u00B5g/m\u00B3" },
+  { label: "PM2.5 24 h (WHO)", value: "15 \u00B5g/m\u00B3" },
+  { label: "PM10 24 h (WHO)", value: "45 \u00B5g/m\u00B3" },
+];
+
+export default function AirQualityAndAlerts({ weather }) {
+  const has = Boolean(weather?.aqi != null);
+  const tone = aqiTone(weather?.aqi);
 
   return (
-    <div className="space-y-4">
-      <section className="card overflow-hidden">
-        <header className="section-header">
-          <h2 className="section-title">Air quality</h2>
-          <span className={`stat-chip ${tone.tone}`}>{tone.label}</span>
-        </header>
+    <section className="card overflow-hidden">
+      <header className="section-header">
+        <h2 className="section-title">Air quality</h2>
+        <span className={`stat-chip ${has ? tone.tone : "chip-warn"}`}>
+          {has ? tone.label : "No data"}
+        </span>
+      </header>
 
-        <div className="p-4">
-          <div className="flex items-baseline justify-between">
-            <div className="flex items-baseline gap-1.5">
-              <span className="num text-[34px] font-semibold leading-none tracking-tight" style={{ color: "var(--ink)" }}>
-                {location.aqi ?? "--"}
-              </span>
-              <span className="text-[11px]" style={{ color: "var(--ink-3)" }}>
-                AQI
-              </span>
-            </div>
+      {!has ? (
+        <p className="px-5 py-8 text-center text-[12px]" style={{ color: "var(--ink-3)" }}>
+          Particulate readings appear once a location is loaded.
+        </p>
+      ) : (
+        <div className="p-5">
+          <div className="flex items-baseline gap-1.5">
+            <span className="num text-[36px] font-semibold leading-none tracking-tight" style={{ color: "var(--ink)" }}>
+              {weather.aqi}
+            </span>
+            <span className="text-[11px]" style={{ color: "var(--ink-3)" }}>
+              European AQI
+            </span>
           </div>
 
           <div className="progress-bar mt-3">
             <div
               className="progress-fill"
               style={{
-                width: `${Math.min(((location.aqi ?? 0) / 120) * 100, 100)}%`,
+                width: `${Math.min((weather.aqi / 120) * 100, 100)}%`,
                 background: tone.bar,
               }}
             />
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {POLLUTANTS(location).map((p) => (
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            {POLLUTANTS.map((p) => (
               <div
                 key={p.label}
                 className="rounded-lg px-3 py-2.5"
@@ -50,7 +58,7 @@ export default function AirQualityAndAlerts({ location }) {
               >
                 <p className="label">{p.label}</p>
                 <p className="num mt-1.5 text-[15px] font-semibold" style={{ color: "var(--ink)" }}>
-                  {p.value ?? "--"}
+                  {weather[p.key] ?? "\u2014"}
                   <span className="ml-1 text-[10px] font-normal" style={{ color: "var(--ink-3)" }}>
                     &micro;g/m&sup3;
                   </span>
@@ -59,7 +67,7 @@ export default function AirQualityAndAlerts({ location }) {
                   <div
                     className="progress-fill"
                     style={{
-                      width: `${Math.min(((p.value ?? 0) / p.max) * 100, 100)}%`,
+                      width: `${Math.min(((weather[p.key] ?? 0) / p.max) * 100, 100)}%`,
                       background: tone.bar,
                     }}
                   />
@@ -67,59 +75,20 @@ export default function AirQualityAndAlerts({ location }) {
               </div>
             ))}
           </div>
+
+          <div className="mt-5 border-t pt-3" style={{ borderColor: "var(--border)" }}>
+            <p className="label">Reference thresholds</p>
+            <dl className="mt-2 space-y-1.5">
+              {THRESHOLDS.map((t) => (
+                <div key={t.label} className="flex items-center justify-between gap-3">
+                  <dt className="text-[11px]" style={{ color: "var(--ink-3)" }}>{t.label}</dt>
+                  <dd className="num text-[11px]" style={{ color: "var(--ink-2)" }}>{t.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
         </div>
-      </section>
-
-      <section className="card overflow-hidden">
-        <header className="section-header">
-          <h2 className="section-title">Bulletins</h2>
-          <span className="num text-[10px]" style={{ color: "var(--ink-3)" }}>
-            {REGIONAL_ALERTS.length}
-          </span>
-        </header>
-
-        <ul className="p-2">
-          {REGIONAL_ALERTS.map((a) => {
-            const critical = a.severity === "critical";
-            const expanded = open === a.id;
-            return (
-              <li key={a.id}>
-                <button
-                  onClick={() => setOpen(expanded ? null : a.id)}
-                  className="w-full rounded-lg border border-transparent px-2.5 py-2.5 text-left transition-colors hover:bg-[var(--surface-2)] hover:border-[var(--border)]"
-                >
-                  <div className="flex items-start gap-2.5">
-                    <span
-                      className="dot mt-1.5 shrink-0"
-                      style={{ background: critical ? "var(--bad)" : "var(--warn)" }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[12px] font-medium" style={{ color: "var(--ink)" }}>
-                        {a.type}
-                      </p>
-                      <p className="mt-0.5 text-[10px]" style={{ color: "var(--ink-3)" }}>
-                        {a.region}
-                      </p>
-                    </div>
-                    <span className="num shrink-0 text-[10px]" style={{ color: "var(--ink-3)" }}>
-                      {a.issued}
-                    </span>
-                  </div>
-
-                  {expanded && (
-                    <div className="mt-2.5 border-t pt-2.5" style={{ borderColor: "var(--border)" }}>
-                      <p className="text-[11px] leading-relaxed" style={{ color: "var(--ink-2)" }}>
-                        {a.description}
-                      </p>
-                      <span className="stat-chip chip-accent mt-2">{a.source}</span>
-                    </div>
-                  )}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-    </div>
+      )}
+    </section>
   );
 }

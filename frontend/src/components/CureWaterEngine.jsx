@@ -85,7 +85,11 @@ export default function CureWaterEngine() {
           {
             label: "Risk classification",
             value: result?.risk_level ?? "—",
-            sub: result ? result.heat_status ?? "engine output" : "awaiting run",
+            sub: result
+              ? result.heat_warning
+                ? "heat warning active"
+                : `${result.heat_adjustment_percent}% heat adjustment`
+              : "awaiting run",
             tone:
               result?.risk_level === "HIGH"
                 ? "var(--bad)"
@@ -307,9 +311,24 @@ export default function CureWaterEngine() {
 
           <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-4">
             {[
-              ["Available", `${result.available_water_liters?.toLocaleString()} L`],
-              ["Avg daily", `${result.average_daily_consumption_liters?.toLocaleString()} L`],
-              ["Projected daily", `${result.projected_daily_consumption_liters?.toLocaleString()} L`],
+              [
+                "Available",
+                result.available_water_liters != null
+                  ? `${Math.round(result.available_water_liters).toLocaleString()} L`
+                  : "n/a",
+              ],
+              [
+                "Avg daily",
+                result.average_daily_consumption_liters != null
+                  ? `${Math.round(result.average_daily_consumption_liters).toLocaleString()} L`
+                  : "n/a",
+              ],
+              [
+                "Projected daily",
+                result.projected_daily_consumption_liters != null
+                  ? `${Math.round(result.projected_daily_consumption_liters).toLocaleString()} L`
+                  : "n/a",
+              ],
               ["Runway", result.water_runway_days != null ? `${result.water_runway_days} d` : "n/a"],
               ["Max temp", `${result.max_temperature_c} °C`],
               ["Heat adj", `${result.heat_adjustment_percent}%`],

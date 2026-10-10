@@ -1,4 +1,4 @@
-export function ViewShell({ title, badge, subtitle, children, action }) {
+﻿export function ViewShell({ title, badge, subtitle, children, action }) {
   return (
     <div className="animate-fadeIn space-y-4">
       <header className="card flex flex-wrap items-center justify-between gap-3 px-4 py-3">
@@ -61,19 +61,6 @@ export function Panel({ title, children, className = "" }) {
       )}
       <div className="p-4">{children}</div>
     </section>
-  );
-}
-
-export function LogList({ items }) {
-  return (
-    <ul className="space-y-2">
-      {items.map((it, i) => (
-        <li key={i} className="flex items-start gap-2 text-[12px]" style={{ color: "var(--ink-2)" }}>
-          <span className="dot mt-1.5 shrink-0" style={{ background: "var(--accent)" }} />
-          <span>{it}</span>
-        </li>
-      ))}
-    </ul>
   );
 }
 

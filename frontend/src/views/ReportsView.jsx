@@ -1,68 +1,93 @@
-import { ViewShell, Panel } from "../components/ViewPrimitives";
+﻿import { ViewShell, Panel, StatCard } from "../components/ViewPrimitives";
+import { convertTemp, shortDate, timeOnly } from "../data/liveWeather";
 
-export default function ReportsView({ location }) {
+export default function ReportsView({ place, weather, unit = "C" }) {
+  const daily = (weather?.daily ?? []).slice(0, 3);
+  const hourly = (weather?.hourly ?? []).slice(0, 6);
+
   return (
     <ViewShell
       title="Operational reports"
-      subtitle={`Archive &amp; briefings for ${location.city}`}
+      subtitle={
+        place?.name
+          ? `Archive &amp; briefings for ${place.name}`
+          : "Select a location to begin"
+      }
     >
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {[
-          {
-            tag: "Daily summary",
-            tone: "var(--accent)",
-            title: "Regional diurnal report",
-            body: "Composite of surface temperature, humidity minimum, and mean wind across the monitoring network for the reporting day.",
-            fields: ["Tmax / Tmin", "Min humidity", "Mean wind"],
-          },
-          {
-            tag: "Agricultural",
-            tone: "var(--good)",
-            title: "Crop & soil briefing",
-            body: "Evapotranspiration estimate and soil moisture outlook for irrigated plots, derived from temperature, radiation and wind.",
-            fields: ["ET₀ estimate", "Soil moisture", "Irrigation window"],
-          },
-          {
-            tag: "Air quality",
-            tone: "var(--info)",
-            title: "Particulate compliance log",
-            body: "Rolling particulate averages with comparison against national ambient thresholds for the reporting period.",
-            fields: ["24 h PM2.5", "24 h PM10", "Compliance"],
-          },
-        ].map((r) => (
-          <section key={r.tag} className="card flex flex-col overflow-hidden">
-            <div className="h-[2px]" style={{ background: r.tone }} />
-            <div className="flex flex-1 flex-col p-4">
-              <span className="label" style={{ color: r.tone }}>
-                {r.tag}
-              </span>
-              <h3 className="mt-1.5 text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
-                {r.title}
-              </h3>
-              <p className="mt-2 flex-1 text-[11px] leading-relaxed" style={{ color: "var(--ink-3)" }}>
-                {r.body}
-              </p>
-              <dl className="mt-4 space-y-1.5 border-t pt-3" style={{ borderColor: "var(--border)" }}>
-                {r.fields.map((f) => (
-                  <div key={f} className="flex justify-between text-[11px]">
-                    <dt style={{ color: "var(--ink-3)" }}>{f}</dt>
-                    <dd className="num" style={{ color: "var(--ink-2)" }}>
-                      &mdash;
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          </section>
-        ))}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard
+          label="Sunrise"
+          value={timeOnly(weather?.daily?.[0]?.sunrise)}
+          sub="local time"
+          tone="warn"
+        />
+        <StatCard
+          label="Sunset"
+          value={timeOnly(weather?.daily?.[0]?.sunset)}
+          sub="local time"
+          tone="info"
+        />
+        <StatCard
+          label="High today"
+          value={convertTemp(weather?.daily?.[0]?.max, unit)}
+          unit={`\u00B0${unit}`}
+          sub="forecast maximum"
+        />
+        <StatCard
+          label="Rain chance"
+          value={weather?.daily?.[0]?.pop != null ? `${weather.daily[0].pop}` : "\u2014"}
+          unit="%"
+          sub="today"
+          tone="good"
+        />
       </div>
 
-      <Panel title="Availability">
-        <p className="text-[12px] leading-relaxed" style={{ color: "var(--ink-2)" }}>
-          Report figures populate automatically once the FastAPI backend is connected. Until
-          then the layout above is rendered with empty values rather than invented numbers.
-        </p>
-      </Panel>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <Panel title="Daily outlook">
+          {daily.length === 0 ? (
+            <p className="py-6 text-center text-[12px]" style={{ color: "var(--ink-3)" }}>
+              Select a location to generate the outlook.
+            </p>
+          ) : (
+            <ul className="space-y-2.5">
+              {daily.map((d) => (
+                <li key={d.date} className="flex items-center justify-between gap-3 text-[12px]">
+                  <span style={{ color: "var(--ink-2)" }}>{shortDate(d.date)}</span>
+                  <span className="num" style={{ color: "var(--ink-3)" }}>
+                    {convertTemp(d.min, unit)}&deg; / {convertTemp(d.max, unit)}&deg;{unit}
+                  </span>
+                  <span className="num" style={{ color: "var(--ink-2)" }}>
+                    {d.pop}% rain
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+
+        <Panel title="Next hours">
+          {hourly.length === 0 ? (
+            <p className="py-6 text-center text-[12px]" style={{ color: "var(--ink-3)" }}>
+              Select a location to see the hourly trend.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {hourly.map((h, i) => (
+                <li key={i} className="flex items-center justify-between gap-3 text-[12px]">
+                  <span style={{ color: "var(--ink-3)" }}>{i === 0 ? "Now" : h.time}</span>
+                  <span className="num font-semibold" style={{ color: "var(--ink)" }}>
+                    {convertTemp(h.temp, unit)}&deg;{unit}
+                  </span>
+                  <span className="num" style={{ color: "var(--ink-3)" }}>
+                    {h.wind != null ? `${Math.round(h.wind)} km/h` : "\u2014"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      </div>
     </ViewShell>
   );
 }
+

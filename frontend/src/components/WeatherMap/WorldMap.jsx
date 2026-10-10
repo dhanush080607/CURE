@@ -1,197 +1,74 @@
 ﻿import { useEffect, useRef, useState, useCallback } from "react";
-import { createRoot } from "react-dom/client";
 import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
-import { SAMPLE_LOCATIONS } from "../../data/mockWeatherData";
-import { fetchLiveStations, conditionMeta, fmtTemp } from "../../data/liveWeather";
-
-const USE_LIVE_STATIONS =
-  import.meta.env.VITE_USE_LIVE_STATIONS !== "true";
 
 const OWM_KEY = (import.meta.env.VITE_OWM_KEY || "").trim();
+
+const STYLES = {
+  dark: "https://tiles.openfreemap.org/styles/dark",
+  light: "https://tiles.openfreemap.org/styles/liberty",
+};
+
+const INDIA_BOUNDS = [
+  [68.1, 6.5],
+  [97.4, 35.6],
+];
+
 const OWM_TILES = {
   clouds: {
-    build: () =>
-      `https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=${OWM_KEY}`,
+    build: () => `https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=${OWM_KEY}`,
     opacity: 0.5,
   },
   temp: {
-    build: () =>
-      `https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${OWM_KEY}`,
-    opacity: 0.42,
+    build: () => `https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${OWM_KEY}`,
+    opacity: 0.4,
   },
   wind: {
-    build: () =>
-      `https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=${OWM_KEY}`,
-    opacity: 0.55,
+    build: () => `https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=${OWM_KEY}`,
+    opacity: 0.5,
   },
 };
 
-const RAINVIEWER_META_URL = "https://api.rainviewer.com/public/weather-maps.json";
+const RAINVIEWER_META = "https://api.rainviewer.com/public/weather-maps.json";
 const RAINVIEWER_FRAME_MS = 450;
 
-const OVERLAY_BUTTONS = [
+const OVERLAYS = [
   { id: "radar", label: "Radar", dot: "#22d3ee", keyless: true },
-  { id: "clouds", label: "Clouds", dot: "#a09a92", keyless: false },
+  { id: "clouds", label: "Clouds", dot: "#8a8a95", keyless: false },
   { id: "wind", label: "Wind", dot: "#8ab4f8", keyless: false },
   { id: "temp", label: "Temperature", dot: "#f5c451", keyless: false },
 ];
 
-function disposeMarkers(markersRef, popupRootsRef) {
-  popupRootsRef.current.forEach((e) => e.root.unmount());
-  popupRootsRef.current.clear();
-  Object.values(markersRef.current).forEach((m) => m.remove());
-  markersRef.current = {};
+const EMPTY = { radar: false, temp: false, wind: false, clouds: false };
+
+function themeName() {
+  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
 }
 
-function stationMarkerEl(station, isSelected) {
-  const color = isSelected
-    ? "#7fee64"
-    : station.isPrimary
-      ? "var(--accent)"
-      : "var(--ink-3)";
-  const size = isSelected ? 15 : station.isPrimary ? 12 : 9;
-
-  const el = document.createElement("div");
-  el.className = "station-marker";
-  el.style.cssText = `position:relative;width:${size}px;height:${size}px;color:${color};cursor:pointer;`;
-
-  if (isSelected) {
-    const pulse = document.createElement("div");
-    pulse.className = "station-marker__pulse";
-    el.appendChild(pulse);
-  }
-
-  const dot = document.createElement("div");
-  dot.style.cssText = `position:absolute;inset:0;border-radius:9999px;background:${color};border:2px solid var(--bg);box-shadow:0 0 0 1px ${color}44;`;
-  el.appendChild(dot);
-
-  return el;
-}
-
-function PopupBody({ station, unit }) {
-  const [icon, label] = conditionMeta(station.weatherCode);
-
-  const cell = (k, v, accent) => (
-    <div
-      className="rounded-lg px-2.5 py-2"
-      style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
-    >
-      <div className="label">{k}</div>
-      <div
-        className={`num mt-1 text-[13px] font-semibold ${accent ? "" : ""}`}
-        style={{ color: accent ? "var(--accent)" : "var(--ink)" }}
-      >
-        {v}
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="w-[224px] p-3.5">
-      <div className="mb-3 flex items-start justify-between gap-2 border-b pb-3"
-        style={{ borderColor: "var(--border)" }}
-      >
-        <div className="min-w-0">
-          <div className="truncate text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
-            {station.city || station.name}
-          </div>
-          <div className="mt-0.5 truncate text-[10px]" style={{ color: "var(--ink-3)" }}>
-            {station.country}
-          </div>
-        </div>
-        <div className="shrink-0 text-xl leading-none">{icon}</div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        {cell("Temperature", `${fmtTemp(station.temp, unit)}\u00B0${unit}`, true)}
-        {cell("Condition", label)}
-        {station.windSpeed != null &&
-          cell("Wind", `${station.windSpeed} km/h ${station.windDirection || ""}`.trim())}
-        {station.humidity != null && cell("Humidity", `${station.humidity}%`)}
-      </div>
-
-      <div
-        className="mt-3 flex items-center justify-between border-t pt-2.5 text-[10px]"
-        style={{ borderColor: "var(--border)", color: "var(--ink-3)" }}
-      >
-        <span className="num">
-          {station.lat?.toFixed(3)}, {station.lon?.toFixed(3)}
-        </span>
-        <span style={{ color: station.live ? "var(--good)" : "var(--warn)" }}>
-          {station.source || (station.live ? "live" : "sample")}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-export default function WorldMap({
-  selectedLocation,
-  onSelectLocation,
-  layers = [],
-  unit = "C",
-  currentTimeSlice,
-}) {
+export default function WorldMap({ place, status, source, onSelectPoint, onOpenLocationSearch }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
-  const maplibreRef = useRef(null);
-  const markersRef = useRef({});
-  const popupRootsRef = useRef(new Map());
-  const radarRef = useRef({ timer: null, index: 0 });
+  const radarRef = useRef({ timer: null, frames: [], source: null });
   const owmErrRef = useRef({ count: 0, flagged: false });
-  const onSelectRef = useRef(onSelectLocation);
-  const radarOpacityRef = useRef(0.5);
+  const onSelectRef = useRef(onSelectPoint);
+  const overlaysRef = useRef(EMPTY);
+  const styleReadyRef = useRef(false);
+  const fittedRef = useRef(false);
+  const activeStyleRef = useRef(null);
 
-  const [stations, setStations] = useState(() =>
-    SAMPLE_LOCATIONS.map((s, i) => ({ ...s, isPrimary: i === 0, live: false }))
-  );
   const [mapReady, setMapReady] = useState(false);
-  const [liveStatus, setLiveStatus] = useState("loading");
-  const [source, setSource] = useState(null);
   const [radarStatus, setRadarStatus] = useState("idle");
   const [owmStatus, setOwmStatus] = useState(OWM_KEY ? "ready" : "nokey");
-  const [overlays, setOverlays] = useState({
-    radar: false,
-    temp: false,
-    wind: false,
-    clouds: false,
-  });
+  const [overlays, setOverlays] = useState(EMPTY);
 
   useEffect(() => {
-    onSelectRef.current = onSelectLocation;
-  }, [onSelectLocation]);
-
-  const radarActive = layers.find((l) => l.id === "radar")?.active ?? false;
-  const windActive = layers.find((l) => l.id === "wind")?.active ?? false;
-  const cloudsActive = layers.find((l) => l.id === "clouds")?.active ?? false;
-  const tempActive = layers.find((l) => l.id === "temperature")?.active ?? false;
-
-  const precipIntensity = Number(currentTimeSlice?.precipIntensity ?? 1);
-  const radarOpacity = Math.max(0.3, Math.min(0.9, 0.4 + precipIntensity * 0.4));
+    onSelectRef.current = onSelectPoint;
+  }, [onSelectPoint]);
 
   useEffect(() => {
-    radarOpacityRef.current = radarOpacity;
-  }, [radarOpacity]);
+    overlaysRef.current = overlays;
+  }, [overlays]);
 
-  useEffect(() => {
-    let cancelled = false;
-    if (!USE_LIVE_STATIONS) {
-      setLiveStatus("sample");
-      return;
-    }
-    fetchLiveStations(SAMPLE_LOCATIONS)
-      .then((result) => {
-        if (cancelled) return;
-        setStations(result.stations);
-        setSource(result.source);
-        setLiveStatus("live");
-      })
-      .catch(() => !cancelled && setLiveStatus("error"));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
+  /* ---------------- map init ---------------- */
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -200,27 +77,52 @@ export default function WorldMap({
 
     import("maplibre-gl").then((lib) => {
       if (disposed || mapRef.current) return;
-      maplibreRef.current = lib;
       lib.setWorkerUrl(maplibreWorkerUrl);
-      const { Map: MapLibreMap, NavigationControl, AttributionControl } = lib;
+      const { Map: MapLibreMap, NavigationControl, ScaleControl } = lib;
 
-      const theme = document.documentElement.dataset.theme || "dark";
+      const missingIcon = {
+        width: 20,
+        height: 20,
+        data: new Uint8Array(400),
+      };
 
       map = new MapLibreMap({
         container: containerRef.current,
-        style:
-          theme === "light"
-            ? "https://tiles.openfreemap.org/styles/liberty"
-            : "https://tiles.openfreemap.org/styles/dark",
-        center: [78.35, 14.4],
-        zoom: 5.6,
-        minZoom: 2.5,
+        style: STYLES[themeName()],
+        center: [78.9, 22.5],
+        zoom: 4,
+        minZoom: 2,
         maxZoom: 14,
         attributionControl: false,
+        dragRotate: false,
+        pitchWithRotate: false,
       });
 
       map.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
-      map.addControl(new AttributionControl({ compact: true }), "bottom-left");
+      map.addControl(new ScaleControl({ unit: "metric", maxWidth: 90 }), "bottom-left");
+
+      activeStyleRef.current = STYLES[themeName()];
+
+      map.setMissingStyleImageResolver((params) => {
+        if (params?.name) {
+          const dot = document.createElement("canvas");
+          dot.width = 12;
+          dot.height = 12;
+          const ctx = dot.getContext("2d");
+          if (ctx) {
+            ctx.beginPath();
+            ctx.arc(6, 6, 4, 0, Math.PI * 2);
+            ctx.fillStyle = "#4c9aff";
+            ctx.fill();
+          }
+          return {
+            width: 12,
+            height: 12,
+            data: dot,
+          };
+        }
+        return missingIcon;
+      });
 
       map.on("error", (e) => {
         const msg = String(e?.error?.message || "");
@@ -233,96 +135,124 @@ export default function WorldMap({
         }
       });
 
-      map.on("load", () => !disposed && setMapReady(true));
+      map.on("click", (e) => {
+        onSelectRef.current?.({ lat: e.lngLat.lat, lon: e.lngLat.lng });
+      });
+
+      map.on("load", () => {
+        if (disposed) return;
+        styleReadyRef.current = true;
+        setMapReady(true);
+        if (!fittedRef.current) {
+          fittedRef.current = true;
+          map.fitBounds(INDIA_BOUNDS, { padding: 48, duration: 0 });
+        }
+      });
+
+      map.on("styledata", () => {
+        styleReadyRef.current = false;
+      });
+
+      map.on("idle", () => {
+        styleReadyRef.current = true;
+      });
+
+      map.getCanvas().style.cursor = "crosshair";
       mapRef.current = map;
     });
 
     return () => {
       disposed = true;
       if (radarRef.current.timer) clearInterval(radarRef.current.timer);
-      radarRef.current = { timer: null, index: 0 };
+      radarRef.current = { timer: null, frames: [], source: null };
       map?.remove();
       mapRef.current = null;
+      styleReadyRef.current = false;
       setMapReady(false);
-      disposeMarkers(markersRef, popupRootsRef);
     };
   }, []);
 
+  /* ---------------- theme -> basemap style ---------------- */
   useEffect(() => {
-    if (!mapReady) return;
-    const map = mapRef.current;
-    const { Marker, Popup } = maplibreRef.current ?? {};
-    if (!map || !Marker || !Popup) return;
+    const apply = () => {
+      const next = STYLES[themeName()];
+      const map = mapRef.current;
+      if (!map) return;
+      // `getStyle()` returns parsed style JSON, not the stylesheet URL, so the
+      // applied URL is tracked in a ref instead.
+      if (activeStyleRef.current === next) return;
 
-    disposeMarkers(markersRef, popupRootsRef);
+      activeStyleRef.current = next;
+      styleReadyRef.current = false;
+      map.setStyle(next);
 
-    stations.forEach((station) => {
-      const isSelected = selectedLocation?.id === station.id;
+      const settle = () => {
+        styleReadyRef.current = true;
+        setOverlays({ ...EMPTY });
+        if (fittedRef.current && place?.lat != null) {
+          map.easeTo({ center: [place.lon, place.lat], zoom: 9, duration: 600 });
+        }
+      };
 
-      const host = document.createElement("div");
-      const root = createRoot(host);
-      root.render(<PopupBody station={station} unit={unit} />);
+      if (map.isStyleLoaded()) settle();
+      else map.once("idle", settle);
+    };
 
-      const popup = new Popup({
-        offset: 16,
-        closeButton: true,
-        maxWidth: "260px",
-        className: "station-popup",
-      }).setDOMContent(host);
-
-      const marker = new Marker({
-        element: stationMarkerEl(station, isSelected),
-        anchor: "center",
-      })
-        .setLngLat([station.lon, station.lat])
-        .setPopup(popup)
-        .addTo(map);
-
-      marker.on("click", () => onSelectRef.current?.(station));
-
-      popupRootsRef.current.set(station.id, { root, station });
-      markersRef.current[station.id] = marker;
+    apply();
+    const observer = new MutationObserver(apply);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
     });
+    return () => observer.disconnect();
+    // `place` is read only to re-centre after a style swap; it must not itself
+    // retrigger this effect, otherwise every selection reloads the basemap.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapReady]);
 
-    if (selectedLocation?.lon != null && selectedLocation?.lat != null) {
-      map.easeTo({
-        center: [selectedLocation.lon, selectedLocation.lat],
-        zoom: Math.max(map.getZoom(), 6.2),
-        duration: 900,
-      });
-    }
-  }, [stations, selectedLocation, unit, mapReady]);
+  /* ---------------- fly to selected place ---------------- */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !place || place.lat == null) return;
 
-  const toggleOverlay = useCallback((id) => {
+    const fly = () => {
+      map.easeTo({ center: [place.lon, place.lat], zoom: 9, duration: 800 });
+    };
+
+    if (styleReadyRef.current) fly();
+    else map.once("idle", fly);
+  }, [place]);
+
+  const toggle = useCallback((id) => {
     setOverlays((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
 
-  useEffect(() => {
-    setOverlays((prev) => ({
-      ...prev,
-      radar: radarActive,
-      temp: tempActive,
-      wind: windActive,
-      clouds: cloudsActive,
-    }));
-  }, [radarActive, tempActive, windActive, cloudsActive]);
+  const stopRadar = useCallback((map) => {
+    if (radarRef.current.timer) {
+      clearInterval(radarRef.current.timer);
+      radarRef.current.timer = null;
+    }
+    if (!map) return;
+    if (map.getLayer?.("radar")) map.removeLayer("radar");
+    // The source must be dropped too, otherwise re-enabling throws
+    // "There is already a source with id 'radar-src'".
+    if (map.getSource?.("radar-src")) map.removeSource("radar-src");
+    radarRef.current.frames = [];
+  }, []);
+
+  /* ---------------- radar ---------------- */
 
   useEffect(() => {
-    if (!mapReady) return;
     const map = mapRef.current;
+    if (!mapReady || !map) return;
 
     if (!overlays.radar) {
-      if (radarRef.current.timer) {
-        clearInterval(radarRef.current.timer);
-        radarRef.current.timer = null;
-      }
-      if (map.getLayer("radar")) map.removeLayer("radar");
-      setRadarStatus((p) => (p === "error" ? p : "idle"));
+      stopRadar(map);
       return;
     }
 
     let cancelled = false;
-    fetch(RAINVIEWER_META_URL)
+    fetch(RAINVIEWER_META)
       .then((r) => {
         if (!r.ok) throw new Error("RainViewer");
         return r.json();
@@ -333,54 +263,42 @@ export default function WorldMap({
         if (!past.length) throw new Error("no frames");
 
         const frames = past.map((f) => `${meta.host}${f.path}/256/{z}/{x}/{y}/8/1_1.png`);
-        const latest = frames[frames.length - 1];
 
-        if (map.getLayer("radar")) map.removeLayer("radar");
-        if (!map.getSource("radar-src")) {
-          map.addSource("radar-src", {
-            type: "raster",
-            tiles: [latest],
-            tileSize: 256,
-            maxzoom: 7,
-          });
-        } else {
-          map.getSource("radar-src").setTiles([latest]);
-        }
+        stopRadar(map);
 
+        map.addSource("radar-src", {
+          type: "raster",
+          tiles: [frames[frames.length - 1]],
+          tileSize: 256,
+          maxzoom: 7,
+        });
         map.addLayer({
           id: "radar",
           type: "raster",
           source: "radar-src",
-          paint: { "raster-opacity": radarOpacityRef.current },
+          paint: { "raster-opacity": 0.72 },
         });
+        radarRef.current.frames = frames;
         setRadarStatus("live");
 
         let cursor = 0;
-        radarRef.current.index = frames.length - 1;
         radarRef.current.timer = setInterval(() => {
           cursor = (cursor + 1) % frames.length;
-          radarRef.current.index = (frames.length - 1 + cursor) % frames.length;
           const src = map.getSource("radar-src");
-          if (src) src.setTiles([frames[radarRef.current.index]]);
+          if (src) src.setTiles([frames[cursor]]);
         }, RAINVIEWER_FRAME_MS);
       })
-      .catch(() => !cancelled && setRadarStatus("error"));
+      .catch(() => { if (!cancelled) { stopRadar(map); setRadarStatus("error"); } });
 
     return () => {
       cancelled = true;
     };
-  }, [overlays.radar, mapReady]);
+  }, [overlays.radar, mapReady, stopRadar]);
 
+  /* ---------------- openweathermap overlays ---------------- */
   useEffect(() => {
-    if (!mapReady) return;
     const map = mapRef.current;
-    if (!map.getLayer("radar")) return;
-    map.setPaintProperty("radar", "raster-opacity", radarOpacity);
-  }, [radarOpacity, mapReady]);
-
-  useEffect(() => {
-    if (!mapReady || !OWM_KEY) return;
-    const map = mapRef.current;
+    if (!mapReady || !map || !OWM_KEY) return;
 
     Object.entries(OWM_TILES).forEach(([id, cfg]) => {
       const layerId = `owm-${id}`;
@@ -407,23 +325,14 @@ export default function WorldMap({
     });
   }, [overlays, mapReady]);
 
-  const activeStation =
-    stations.find((s) => s.id === selectedLocation?.id) ?? selectedLocation;
-  const [condIcon] = conditionMeta(activeStation?.weatherCode);
-
-  const liveBadge = {
-    live: { dot: "bg-[var(--good)]", text: "Live" },
-    loading: { dot: "bg-[var(--warn)]", text: "Loading" },
-    sample: { dot: "bg-[var(--warn)]", text: "Sample" },
-    error: { dot: "bg-[var(--bad)]", text: "Offline" },
-  }[liveStatus];
+  const loading = status === "loading";
 
   return (
     <div
       className="relative w-full overflow-hidden rounded-xl"
       style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
     >
-      <div className="h-[440px] w-full sm:h-[520px] lg:h-[580px]">
+      <div className="h-[440px] w-full sm:h-[520px] lg:h-[600px]">
         <div ref={containerRef} className="h-full w-full" />
       </div>
 
@@ -444,46 +353,59 @@ export default function WorldMap({
 
       {mapReady && (
         <>
-          <div className="glass absolute left-3 top-3 z-10 flex items-center gap-2 rounded-full border px-2.5 py-1.5"
-            style={{ borderColor: "var(--border)" }}
-          >
-            <span className={`dot ${liveBadge.dot}`} />
-            <span className="text-[10px] font-medium" style={{ color: "var(--ink)" }}>
-              {liveBadge.text}
-            </span>
-            {source && (
-              <span className="text-[10px]" style={{ color: "var(--ink-3)" }}>
-                {source}
+          {!place?.name && !loading && (
+            <div
+              className="glass pointer-events-none absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-full px-3.5 py-1.5"
+              style={{ border: "1px solid var(--border)" }}
+            >
+              <p className="text-[11px]" style={{ color: "var(--ink-2)" }}>
+                Click anywhere on the map to load weather
+              </p>
+            </div>
+          )}
+
+          {loading && (
+            <div
+              className="glass absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full px-3.5 py-1.5"
+              style={{ border: "1px solid var(--border)" }}
+            >
+              <span
+                className="h-2.5 w-2.5 animate-spin rounded-full border-2"
+                style={{ borderColor: "var(--border-2)", borderTopColor: "var(--accent)" }}
+              />
+              <span className="text-[11px]" style={{ color: "var(--ink-2)" }}>
+                Loading conditions
               </span>
-            )}
-          </div>
+            </div>
+          )}
 
           <div
-            className="glass absolute right-3 top-3 z-10 w-[164px] rounded-xl border p-1"
+            className="glass absolute right-3 top-3 z-10 w-[152px] rounded-xl border p-1"
             style={{ borderColor: "var(--border)" }}
           >
             <p className="label px-1.5 py-1">Overlays</p>
-            {OVERLAY_BUTTONS.map((btn) => {
-              const locked = !btn.keyless && !OWM_KEY;
+            {OVERLAYS.map((b) => {
+              const locked = !b.keyless && !OWM_KEY;
               return (
                 <button
-                  key={btn.id}
-                  onClick={() => !locked && toggleOverlay(btn.id)}
+                  key={b.id}
+                  onClick={() => !locked && toggle(b.id)}
                   disabled={locked}
-                  title={locked ? "Add VITE_OWM_KEY to .env and restart" : btn.label}
-                  className={`layer-btn ${overlays[btn.id] ? "active" : ""} ${locked ? "opacity-40" : ""}`}
+                  title={locked ? "Add VITE_OWM_KEY to .env and restart" : `Toggle ${b.label.toLowerCase()} overlay`}
+                  aria-pressed={overlays[b.id]}
+                  className={`layer-btn ${overlays[b.id] ? "active" : ""} ${locked ? "opacity-40" : ""}`}
                 >
                   <span
                     className="dot"
-                    style={{ background: btn.dot, opacity: overlays[btn.id] ? 1 : 0.35 }}
+                    style={{ background: b.dot, opacity: overlays[b.id] ? 1 : 0.3 }}
                   />
-                  {btn.label}
+                  {b.label}
                   {locked && (
                     <span className="ml-auto text-[9px]" style={{ color: "var(--ink-3)" }}>
                       KEY
                     </span>
                   )}
-                  {btn.id === "radar" && overlays.radar && !locked && (
+                  {b.id === "radar" && overlays.radar && (
                     <span
                       className={`dot ml-auto ${
                         radarStatus === "live"
@@ -504,85 +426,46 @@ export default function WorldMap({
             )}
           </div>
 
-          {activeStation && (
-            <div
-              className="glass absolute bottom-8 left-3 z-10 w-[236px] animate-slideUp rounded-xl border p-3.5"
-              style={{ borderColor: "var(--border-2)" }}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
-                    {activeStation.city}
-                  </p>
-                  <p className="mt-0.5 truncate text-[10px]" style={{ color: "var(--ink-3)" }}>
-                    {activeStation.region || activeStation.country}
-                  </p>
-                </div>
-                <span
-                  className={`stat-chip ${activeStation.live ? "chip-good" : "chip-warn"}`}
-                >
-                  {activeStation.live ? "Live" : "Sample"}
-                </span>
-              </div>
-
-              <div className="mt-3 flex items-center gap-3">
-                <div className="text-[28px] leading-none">{condIcon}</div>
-                <div>
-                  <div
-                    className="num text-[26px] font-semibold leading-none tracking-tight"
-                    style={{ color: "var(--ink)" }}
-                  >
-                    {fmtTemp(activeStation.temp, unit)}
-                    <span className="ml-0.5 text-sm font-normal" style={{ color: "var(--ink-3)" }}>
-                      {unit}
-                    </span>
-                  </div>
-                  <div className="mt-1 text-[11px]" style={{ color: "var(--ink-2)" }}>
-                    {conditionMeta(activeStation.weatherCode)[1]}
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className="mt-3.5 grid grid-cols-3 divide-x border-t pt-3"
-                style={{ borderColor: "var(--border)" }}
-              >
-                {[
-                  {
-                    k: "Humidity",
-                    v: activeStation.humidity != null ? `${activeStation.humidity}%` : "\u2014",
-                  },
-                  {
-                    k: "Wind",
-                    v: activeStation.windSpeed != null ? `${activeStation.windSpeed}` : "\u2014",
-                  },
-                  {
-                    k: "Gusts",
-                    v: activeStation.windGust != null ? `${activeStation.windGust}` : "\u2014",
-                  },
-                ].map((m) => (
-                  <div key={m.k} className="px-2 text-center first:pl-0 last:pr-0">
-                    <p className="label">{m.k}</p>
-                    <p className="num mt-1 text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
-                      {m.v}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div
-            className="glass absolute bottom-0 left-0 right-0 z-10 flex items-center justify-between border-t px-3 py-1.5 text-[9px]"
-            style={{ borderColor: "var(--border)", color: "var(--ink-3)" }}
+          <div className="glass absolute bottom-2 left-2 z-10 rounded-md px-1.5 py-0.5 text-[9px] leading-tight"
+            style={{ border: "1px solid var(--border)", color: "var(--ink-3)" }}
           >
-            <span>OpenFreeMap &middot; OpenMapTiles &middot; OpenStreetMap</span>
-            <span>
-              {overlays.radar && <span className="mr-2">RainViewer</span>}
-              {OWM_KEY && (overlays.temp || overlays.wind || overlays.clouds) && (
-                <span>OpenWeatherMap</span>
+            OpenFreeMap &middot; OpenStreetMap
+          </div>
+
+          <div className="absolute bottom-2 right-2 z-10 flex flex-col items-end gap-1.5">
+            <div className="flex gap-1.5">
+              {source && (
+                <span
+                  className="glass rounded-md px-1.5 py-0.5 text-[9px]"
+                  style={{ border: "1px solid var(--border)", color: "var(--ink-3)" }}
+                >
+                  {source === "wttr" ? "wttr.in" : "Open-Meteo"}
+                </span>
               )}
-            </span>
+              {overlays.radar && (
+                <span
+                  className="glass rounded-md px-1.5 py-0.5 text-[9px]"
+                  style={{ border: "1px solid var(--border)", color: "var(--ink-3)" }}
+                >
+                  RainViewer
+                </span>
+              )}
+              {OWM_KEY && overlays.temp && (
+                <span
+                  className="glass rounded-md px-1.5 py-0.5 text-[9px]"
+                  style={{ border: "1px solid var(--border)", color: "var(--ink-3)" }}
+                >
+                  OpenWeatherMap
+                </span>
+              )}
+            </div>
+            <button
+              onClick={onOpenLocationSearch}
+              className="glass rounded-md px-2 py-1 text-[10px] font-medium transition-colors hover:border-[var(--border-2)]"
+              style={{ border: "1px solid var(--border)", color: "var(--ink-2)" }}
+            >
+              Change location
+            </button>
           </div>
         </>
       )}

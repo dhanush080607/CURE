@@ -1,3 +1,5 @@
+﻿import { NavLink as RouterNavLink } from "react-router-dom";
+
 const Icon = {
   dashboard: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
@@ -90,82 +92,82 @@ const NAV_SECTIONS = [
   {
     section: "Overview",
     items: [
-      { id: "dashboard", label: "Dashboard" },
-      { id: "live_weather", label: "Live weather" },
+      { path: "/dashboard", icon: "dashboard", label: "Dashboard" },
+      { path: "/live-weather", icon: "live_weather", label: "Live weather" },
     ],
   },
   {
     section: "Layers",
     items: [
-      { id: "radar", label: "Radar" },
-      { id: "wind", label: "Wind" },
-      { id: "rainfall", label: "Rainfall" },
-      { id: "temperature", label: "Temperature" },
-      { id: "clouds", label: "Clouds" },
-      { id: "pressure", label: "Pressure" },
-      { id: "satellite", label: "Satellite" },
-      { id: "lightning", label: "Lightning" },
+      { path: "/radar", icon: "radar", label: "Radar" },
+      { path: "/wind", icon: "wind", label: "Wind" },
+      { path: "/rainfall", icon: "rainfall", label: "Rainfall" },
+      { path: "/temperature", icon: "temperature", label: "Temperature" },
+      { path: "/clouds", icon: "clouds", label: "Clouds" },
+      { path: "/pressure", icon: "pressure", label: "Pressure" },
+      { path: "/satellite", icon: "satellite", label: "Satellite" },
+      { path: "/lightning", icon: "lightning", label: "Lightning" },
     ],
   },
   {
     section: "Analysis",
     items: [
-      { id: "air_quality", label: "Air quality", accent: true },
-      { id: "climate_analytics", label: "CURE engine", accent: true },
-      { id: "reports", label: "Reports" },
+      { path: "/air-quality", icon: "air_quality", label: "Air quality", accent: true },
+      { path: "/climate-analytics", icon: "climate_analytics", label: "CURE engine", accent: true },
+      { path: "/reports", icon: "reports", label: "Reports" },
     ],
   },
   {
     section: "System",
-    items: [{ id: "api_access", label: "API access" }, { id: "settings", label: "Settings" }],
+    items: [
+      { path: "/api-access", icon: "api_access", label: "API access" },
+      { path: "/settings", icon: "settings", label: "Settings" },
+    ],
   },
 ];
 
-export default function Sidebar({
-  activeTab,
-  onSelectTab,
-  isCollapsed,
-  onToggleCollapse,
-}) {
+export default function Sidebar({ pathname, isCollapsed, onToggleCollapse }) {
+  const active = (p) => pathname === p;
+
   return (
     <aside
       className="sidebar-transition sticky top-14 z-30 flex h-[calc(100vh-3.5rem)] shrink-0 flex-col"
-      style={{ width: isCollapsed ? 56 : 212, borderRight: "1px solid var(--border)", background: "var(--bg)" }}
+      style={{
+        width: isCollapsed ? 56 : 212,
+        borderRight: "1px solid var(--border)",
+        background: "var(--bg)",
+      }}
     >
-      <nav className="flex-1 overflow-y-auto px-2 py-4">
+      <nav className="scroll-thin flex-1 overflow-y-auto px-2 py-4">
         {NAV_SECTIONS.map((sec) => (
           <div key={sec.section} className="mb-5 last:mb-0">
             {!isCollapsed && <p className="label px-2.5 pb-1.5">{sec.section}</p>}
             <ul className="space-y-0.5">
               {sec.items.map((item) => {
-                const active = activeTab === item.id;
+                const isActive = active(item.path);
                 return (
-                  <li key={item.id}>
-                    <button
-                      onClick={() => onSelectTab(item.id)}
-                      title={isCollapsed ? item.label : undefined}
-                      aria-current={active ? "page" : undefined}
-                      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-left transition-colors ${
-                        isCollapsed ? "justify-center" : ""
-                      }`}
-                      style={{
-                        background: active ? "var(--accent-wash)" : "transparent",
-                        color: active ? "var(--accent)" : "var(--ink-3)",
-                        border: active ? "1px solid color-mix(in srgb, var(--accent) 26%, transparent)" : "1px solid transparent",
-                      }}
+                  <li key={item.path}>
+                    <NavLink
+                      to={item.path}
+                      ariaLabel={item.label}
+                      collapsed={isCollapsed}
+                      active={isActive}
                     >
-                      <span className="shrink-0">{Icon[item.id] ?? Icon.dashboard}</span>
+                      <span className="shrink-0">{Icon[item.icon]}</span>
                       {!isCollapsed && (
                         <span className="flex-1 truncate text-[12px] font-medium">
                           {item.label}
                           {item.accent && (
-                            <span className="ml-1.5 align-middle text-[9px] font-semibold uppercase tracking-wide" style={{ color: "var(--accent)" }}>
+                            <span
+                              className="ml-1.5 align-middle text-[9px] font-semibold uppercase tracking-wide"
+                              style={{ color: "var(--accent)" }}
+                            >
                               new
                             </span>
                           )}
                         </span>
                       )}
-                    </button>
+                    </NavLink>
                   </li>
                 );
               })}
@@ -175,10 +177,13 @@ export default function Sidebar({
       </nav>
 
       {!isCollapsed && (
-        <div className="m-2 rounded-xl p-3" style={{ border: "1px solid var(--border)", background: "var(--surface)" }}>
+        <div
+          className="m-2 rounded-xl p-3"
+          style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
+        >
           <div className="flex items-center justify-between">
             <span className="label">Data sources</span>
-            <span className="stat-chip chip-good">Healthy</span>
+            <span className="stat-chip chip-good">Live</span>
           </div>
           <ul className="mt-2 space-y-1">
             {["Open-Meteo", "wttr.in", "OpenFreeMap", "RainViewer"].map((s) => (
@@ -196,10 +201,13 @@ export default function Sidebar({
         className="mx-2 mb-2 flex shrink-0 items-center justify-center rounded-lg py-2 transition-colors hover:bg-[var(--surface-2)]"
         style={{ border: "1px solid var(--border)", color: "var(--ink-3)" }}
         aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        title={isCollapsed ? "Expand" : "Collapse"}
       >
         <svg
-          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
           strokeWidth="2"
           className={`transition-transform ${isCollapsed ? "rotate-180" : ""}`}
           aria-hidden="true"
@@ -208,5 +216,28 @@ export default function Sidebar({
         </svg>
       </button>
     </aside>
+  );
+}
+
+function NavLink({ to, active, collapsed, ariaLabel, children }) {
+  return (
+    <RouterNavLink
+      to={to}
+      aria-label={ariaLabel}
+      title={ariaLabel}
+      aria-current={active ? "page" : undefined}
+      className={`flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] transition-colors ${
+        collapsed ? "justify-center" : ""
+      }`}
+      style={{
+        background: active ? "var(--accent-wash)" : "transparent",
+        color: active ? "var(--accent)" : "var(--ink-3)",
+        border: active
+          ? "1px solid color-mix(in srgb, var(--accent) 26%, transparent)"
+          : "1px solid transparent",
+      }}
+    >
+      {children}
+    </RouterNavLink>
   );
 }

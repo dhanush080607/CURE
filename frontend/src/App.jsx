@@ -1,14 +1,17 @@
-import { useState } from "react";
+﻿import { useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
+import LocationSearch from "./components/LocationSearch";
 import WorldMap from "./components/WeatherMap/WorldMap";
 import CurrentConditions from "./components/CurrentConditions";
 import HourlyForecast from "./components/HourlyForecast";
 import MultiDayForecast from "./components/MultiDayForecast";
 import AirQualityAndAlerts from "./components/AirQualityAndAlerts";
-import InteractiveLayers from "./components/InteractiveLayers";
-import TimelineControls from "./components/TimelineControls";
 import OperationalAnalytics from "./components/OperationalAnalytics";
+import TimelineControls from "./components/TimelineControls";
+import InteractiveLayers from "./components/InteractiveLayers";
 import MetricsStrip from "./components/MetricsStrip";
 import CureWaterEngine from "./components/CureWaterEngine";
 
@@ -21,69 +24,64 @@ import ApiAccessView from "./views/ApiAccessView";
 import SettingsView from "./views/SettingsView";
 import LayerDetailView from "./views/LayerDetailView";
 
-import { MITS_MADANAPALLE, WEATHER_LAYERS, TIMELINE_SLICES } from "./data/mockWeatherData";
-import { setTheme } from "./theme";
+import { useWeather } from "./hooks/useWeather";
+import { readPreference, setTheme } from "./theme";
 
-export default function App() {
-  const [selectedLocation, setSelectedLocation] = useState(MITS_MADANAPALLE);
-  const [layers, setLayers] = useState(WEATHER_LAYERS);
-  const [activeSliceIndex, setActiveSliceIndex] = useState(2);
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+export function Shell() {
   const [unit, setUnit] = useState("C");
-  const [theme, setThemeState] = useState(
-    () =>
-      (typeof document !== "undefined" && document.documentElement.dataset.theme) ||
-      "dark"
-  );
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [themePref, setThemePref] = useState(() => readPreference());
 
-  const handleThemeChange = (next) => {
-    setThemeState(setTheme(next));
+  const { place, weather, status, source, select } = useWeather();
+  const { pathname } = useLocation();
+
+  const onThemeChange = (next) => {
+    setTheme(next);
+    setThemePref(next);
   };
 
-  const toggleLayer = (id) =>
-    setLayers((prev) => prev.map((l) => (l.id === id ? { ...l, active: !l.active } : l)));
-
-  const updateOpacity = (id, opacity) =>
-    setLayers((prev) => prev.map((l) => (l.id === id ? { ...l, opacity } : l)));
-
-  const toggleUnit = () => setUnit((p) => (p === "C" ? "F" : "C"));
-  const currentTimeSlice = TIMELINE_SLICES[activeSliceIndex] ?? TIMELINE_SLICES[0];
-
-  const toF = (c) => Math.round((c * 9) / 5 + 32);
+  const rightRail = (
+    <div className="space-y-4">
+      <CurrentConditions place={place} weather={weather} unit={unit} />
+      <HourlyForecast weather={weather} unit={unit} />
+      <MultiDayForecast weather={weather} unit={unit} />
+      <AirQualityAndAlerts weather={weather} />
+    </div>
+  );
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg)", color: "var(--ink)" }}>
       <Header
-        selectedLocation={selectedLocation}
-        onSelectLocation={setSelectedLocation}
+        place={place}
+        weather={weather}
         unit={unit}
-        onToggleUnit={toggleUnit}
-        theme={theme}
-        onThemeChange={handleThemeChange}
+        onToggleUnit={() => setUnit((p) => (p === "C" ? "F" : "C"))}
+        theme={themePref}
+        onThemeChange={onThemeChange}
+        onOpenSearch={() => setSearchOpen(true)}
       />
 
       <div className="flex">
         <div className="hidden md:flex">
           <Sidebar
-            activeTab={activeTab}
-            onSelectTab={setActiveTab}
-            isCollapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed((p) => !p)}
+            pathname={pathname}
+            isCollapsed={collapsed}
+            onToggleCollapse={() => setCollapsed((p) => !p)}
           />
         </div>
 
-        {mobileMenuOpen && (
+        {mobileOpen && (
           <div className="fixed inset-0 z-50 flex md:hidden">
-            <div style={{ width: 212, borderRight: "1px solid var(--border)", background: "var(--bg)" }}>
+            <div style={{ width: 212, background: "var(--bg)", borderRight: "1px solid var(--border)" }}>
               <div
                 className="flex items-center justify-between border-b px-4 py-3"
                 style={{ borderColor: "var(--border)" }}
               >
                 <span className="label">Navigation</span>
                 <button
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={() => setMobileOpen(false)}
                   className="text-[var(--ink-3)] hover:text-[var(--ink)]"
                   aria-label="Close menu"
                 >
@@ -91,118 +89,98 @@ export default function App() {
                 </button>
               </div>
               <Sidebar
-                activeTab={activeTab}
-                onSelectTab={(t) => {
-                  setActiveTab(t);
-                  setMobileMenuOpen(false);
-                }}
+                pathname={pathname}
                 isCollapsed={false}
                 onToggleCollapse={() => {}}
               />
             </div>
-            <div
-              className="flex-1 bg-black/60 backdrop-blur-sm"
-              onClick={() => setMobileMenuOpen(false)}
-            />
+            <div className="flex-1" style={{ background: "rgba(0,0,0,0.55)" }} onClick={() => setMobileOpen(false)} />
           </div>
         )}
 
         <main className="min-w-0 flex-1">
           <div className="mx-auto max-w-[1800px] px-4 py-5 sm:px-6 sm:py-6">
             <div className="mb-4 flex items-center justify-between gap-3 md:hidden">
-              <button onClick={() => setMobileMenuOpen(true)} className="btn">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+              <button onClick={() => setMobileOpen(true)} className="btn">
                 Menu
               </button>
-              <span className="num text-[11px]" style={{ color: "var(--ink-2)" }}>
-                {selectedLocation.city} &middot;{" "}
-                {unit === "C" ? `${selectedLocation.temp}°` : `${toF(selectedLocation.temp)}°`}
-              </span>
+              <button onClick={() => setSearchOpen(true)} className="btn">
+                {place?.name ?? "Choose location"}
+              </button>
             </div>
 
-            {activeTab === "dashboard" ? (
-              <div className="animate-fadeIn space-y-4">
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-                  <div className="space-y-4 xl:col-span-8">
-                    <WorldMap
-                      selectedLocation={selectedLocation}
-                      onSelectLocation={setSelectedLocation}
-                      layers={layers}
-                      unit={unit}
-                      currentTimeSlice={currentTimeSlice}
-                    />
-
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                      <TimelineControls
-                        activeSliceIndex={activeSliceIndex}
-                        onChangeSliceIndex={setActiveSliceIndex}
-                      />
-                      <OperationalAnalytics location={selectedLocation} unit={unit} />
-                      <InteractiveLayers
-                        layers={layers}
-                        onToggleLayer={toggleLayer}
-                        onUpdateOpacity={updateOpacity}
-                      />
+            <Routes>
+              <Route
+                path="/dashboard"
+                element={
+                  <div className="animate-fadeIn space-y-4">
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+                      <div className="space-y-4 xl:col-span-8">
+                        <WorldMap
+                          place={place}
+                          status={status}
+                          source={source}
+                          onSelectPoint={select}
+                          onOpenLocationSearch={() => setSearchOpen(true)}
+                        />
+                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                          <TimelineControls weather={weather} />
+                          <OperationalAnalytics weather={weather} />
+                          <InteractiveLayers place={place} weather={weather} />
+                        </div>
+                      </div>
+                      <div className="xl:col-span-4">{rightRail}</div>
                     </div>
+                    <MetricsStrip weather={weather} unit={unit} />
                   </div>
+                }
+              />
 
-                  <div className="space-y-4 xl:col-span-4">
-                    <CurrentConditions location={selectedLocation} unit={unit} />
-                    <HourlyForecast unit={unit} />
-                    <MultiDayForecast unit={unit} />
-                    <AirQualityAndAlerts location={selectedLocation} />
-                  </div>
-                </div>
-
-                <MetricsStrip />
-              </div>
-            ) : activeTab === "climate_analytics" ? (
-              <div className="animate-fadeIn space-y-4">
-                <div className="card flex items-center justify-between px-4 py-3">
-                  <div>
-                    <h2 className="text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
-                      CURE &mdash; Climate &amp; Utility Risk Engine
-                    </h2>
-                    <p className="mt-0.5 text-[11px]" style={{ color: "var(--ink-3)" }}>
-                      Water reserve runway &amp; consumption model
-                    </p>
-                  </div>
-                  <button onClick={() => setActiveTab("dashboard")} className="btn">
-                    Back to dashboard
-                  </button>
-                </div>
-                <CureWaterEngine />
-              </div>
-            ) : activeTab === "radar" ? (
-              <RadarView location={selectedLocation} />
-            ) : activeTab === "wind" ? (
-              <WindView location={selectedLocation} />
-            ) : activeTab === "temperature" ? (
-              <TemperatureView location={selectedLocation} unit={unit} />
-            ) : activeTab === "air_quality" ? (
-              <AirQualityView location={selectedLocation} />
-            ) : activeTab === "reports" ? (
-              <ReportsView location={selectedLocation} />
-            ) : activeTab === "api_access" ? (
-              <ApiAccessView location={selectedLocation} />
-            ) : activeTab === "settings" ? (
-              <SettingsView unit={unit} onToggleUnit={toggleUnit} theme={theme} onThemeChange={handleThemeChange} />
-            ) : (
-              <LayerDetailView activeTab={activeTab} location={selectedLocation} />
-            )}
+              <Route path="/live-weather" element={<LayerDetailView kind="live_weather" place={place} weather={weather} unit={unit} />} />
+              <Route path="/radar" element={<RadarView place={place} weather={weather} />} />
+              <Route path="/wind" element={<WindView place={place} weather={weather} />} />
+              <Route path="/rainfall" element={<LayerDetailView kind="rainfall" place={place} weather={weather} unit={unit} />} />
+              <Route path="/temperature" element={<TemperatureView place={place} weather={weather} unit={unit} />} />
+              <Route path="/clouds" element={<LayerDetailView kind="clouds" place={place} weather={weather} unit={unit} />} />
+              <Route path="/pressure" element={<LayerDetailView kind="pressure" place={place} weather={weather} unit={unit} />} />
+              <Route path="/satellite" element={<LayerDetailView kind="satellite" place={place} weather={weather} unit={unit} />} />
+              <Route path="/lightning" element={<LayerDetailView kind="lightning" place={place} weather={weather} unit={unit} />} />
+              <Route path="/air-quality" element={<AirQualityView place={place} weather={weather} />} />
+              <Route path="/reports" element={<ReportsView place={place} weather={weather} unit={unit} />} />
+              <Route path="/api-access" element={<ApiAccessView />} />
+              <Route
+                path="/settings"
+                element={
+                  <SettingsView
+                    unit={unit}
+                    onToggleUnit={() => setUnit((p) => (p === "C" ? "F" : "C"))}
+                    theme={themePref}
+                    onThemeChange={onThemeChange}
+                  />
+                }
+              />
+              <Route path="/climate-analytics" element={<CureWaterEngine />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
 
             <footer
-              className="mt-6 flex flex-col gap-1 border-t pt-4 text-[10px] sm:flex-row sm:items-center sm:justify-between"
+              className="mt-8 flex flex-col gap-1 border-t pt-5 text-[10px] sm:flex-row sm:items-center sm:justify-between"
               style={{ borderColor: "var(--border)", color: "var(--ink-3)" }}
             >
-              <span>METEO Intelligence &middot; Madanapalle regional command</span>
-              <span>Weather: Open-Meteo &middot; Basemap: OpenFreeMap &middot; Radar: RainViewer</span>
+              <span>METEO Intelligence</span>
+              <span>Weather: Open-Meteo &middot; Geocoding: Open-Meteo &middot; Basemap: OpenFreeMap &middot; Radar: RainViewer</span>
             </footer>
           </div>
         </main>
-      </div>
+      </div>{searchOpen && <LocationSearch onClose={() => setSearchOpen(false)} onPick={select} />}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Shell />
+    </BrowserRouter>
   );
 }

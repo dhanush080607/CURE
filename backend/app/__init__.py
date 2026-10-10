@@ -1,0 +1,1 @@
+"""CURE backend application package."""

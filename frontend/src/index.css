@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 /* ============================================================
    METEO INTELLIGENCE — DESIGN SYSTEM
@@ -306,10 +306,6 @@ body {
   transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.station-ping {
-  animation: stationPing 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
-}
-
 @keyframes stationPing {
   0%   { transform: scale(0.6); opacity: 0.7; }
   80%  { transform: scale(2.4); opacity: 0; }
@@ -332,6 +328,17 @@ body {
 .animate-fadeIn    { animation: fadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .animate-fadeInLeft{ animation: fadeInLeft 0.28s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .animate-slideUp   { animation: slideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* Scroll areas inside cards should not show a chunky native bar */
+.scroll-thin {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scroll-thin::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
 
 .sidebar-transition {
   transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
@@ -368,6 +375,26 @@ body {
   background: var(--surface-2) !important;
 }
 
+/* Zoom cluster sits above the badge/CTA stack in the bottom-right corner. */
+.maplibregl-ctrl-bottom-right {
+  right: 8px;
+  bottom: 74px;
+}
+
+.maplibregl-ctrl-bottom-left {
+  left: 8px;
+  bottom: 30px;
+}
+
+.maplibregl-ctrl-scale {
+  background: transparent !important;
+  border: none !important;
+  color: var(--ink-3) !important;
+  font-size: 9px !important;
+  font-family: "JetBrains Mono", monospace !important;
+  text-shadow: 0 1px 2px var(--bg) !important;
+}
+
 .maplibregl-ctrl-attrib {
   background: color-mix(in srgb, var(--surface) 78%, transparent) !important;
   border-radius: 0 !important;
@@ -379,48 +406,3 @@ body {
   color: var(--ink-3) !important;
 }
 
-.maplibregl-ctrl-attrib-button {
-  filter: invert(var(--attrib-invert, 1));
-}
-
-[data-theme="light"] {
-  --attrib-invert: 0;
-}
-
-.maplibregl-popup-content {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-  box-shadow: var(--shadow-pop) !important;
-  padding: 0 !important;
-  color: var(--ink);
-}
-
-.maplibregl-popup-tip {
-  border-top-color: var(--surface) !important;
-  border-bottom-color: var(--surface) !important;
-}
-
-.maplibregl-popup-close-button {
-  color: var(--ink-3) !important;
-  font-size: 16px !important;
-  padding: 4px 8px 0 0 !important;
-  right: 2px !important;
-  top: 2px !important;
-}
-
-.maplibregl-popup-close-button:hover {
-  color: var(--ink) !important;
-}
-
-.station-marker {
-  cursor: pointer;
-}
-
-.station-marker__pulse {
-  position: absolute;
-  inset: 0;
-  border-radius: 9999px;
-  border: 1.5px solid currentColor;
-  animation: stationPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-}

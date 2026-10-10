@@ -4,32 +4,56 @@ const ENDPOINTS = [
   {
     method: "GET",
     tone: "var(--good)",
-    path: "/weather/forecast",
-    desc: "3-day max temperature for a coordinate pair",
+    path: "/weather/current",
+    desc: "Conditions, 24 hourly steps and a 7-day outlook",
   },
   {
     method: "GET",
     tone: "var(--good)",
-    path: "/consumption/average",
-    desc: "Average daily usage and trend from history",
+    path: "/weather/search",
+    desc: "Geocoding search for the location picker",
+  },
+  {
+    method: "GET",
+    tone: "var(--good)",
+    path: "/tanks",
+    desc: "List tanks with their consumption history",
+  },
+  {
+    method: "POST",
+    tone: "var(--good)",
+    path: "/tanks",
+    desc: "Create a tank",
+  },
+  {
+    method: "PATCH",
+    tone: "var(--warn)",
+    path: "/tanks/{id}",
+    desc: "Update capacity, level or coordinates",
+  },
+  {
+    method: "POST",
+    tone: "var(--good)",
+    path: "/tanks/{id}/readings",
+    desc: "Append a daily consumption reading",
   },
   {
     method: "POST",
     tone: "var(--info)",
     path: "/water/risk",
-    desc: "Full CURE risk result with AI explanation",
-  },
-  {
-    method: "POST",
-    tone: "var(--info)",
-    path: "/heat/adjustment",
-    desc: "Demand adjustment for a heat condition",
+    desc: "Water runway, risk level and explanation",
   },
   {
     method: "POST",
     tone: "var(--info)",
     path: "/ai/ask",
     desc: "Grounded question against a risk payload",
+  },
+  {
+    method: "GET",
+    tone: "var(--accent)",
+    path: "/health",
+    desc: "Service and AI backend status",
   },
 ];
 

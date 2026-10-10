@@ -1,14 +1,22 @@
-const STORAGE_KEY = "cure.theme";
+﻿const STORAGE_KEY = "cure.theme";
+const PREFS_KEY = "cure.themePref";
 
 export const THEMES = ["light", "dark", "system"];
 
-function readStored() {
+function readStored(key, fallback) {
   try {
-    const v = localStorage.getItem(STORAGE_KEY);
-    return THEMES.includes(v) ? v : "system";
+    const v = localStorage.getItem(key);
+    return v ? v : fallback;
   } catch {
-    return "system";
+    return fallback;
   }
+}
+
+/** The user's *preference*, which may be "system" - not the resolved theme. */
+export function readPreference() {
+  const v = readStored(PREFS_KEY, null);
+  if (THEMES.includes(v)) return v;
+  return THEMES.includes(readStored(STORAGE_KEY, null)) ? readStored(STORAGE_KEY, null) : "system";
 }
 
 export function systemPrefersDark() {
@@ -28,28 +36,25 @@ export function applyTheme(theme) {
   return resolved;
 }
 
-export function persistTheme(theme) {
-  try {
-    localStorage.setItem(STORAGE_KEY, theme);
-  } catch {
-    /* storage unavailable - theme still applies for this session */
-  }
-}
-
 export function initTheme() {
-  const theme = readStored();
-  applyTheme(theme);
+  const pref = readPreference();
+  applyTheme(pref);
 
-  if (theme === "system" && window.matchMedia) {
+  if (pref === "system" && window.matchMedia) {
     window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-      if (readStored() === "system") applyTheme("system");
+      if (readPreference() === "system") applyTheme("system");
     });
   }
 
-  return theme;
+  return pref;
 }
 
-export function setTheme(theme) {
-  persistTheme(theme);
-  return applyTheme(theme);
+export function setTheme(pref) {
+  try {
+    localStorage.setItem(PREFS_KEY, pref);
+    localStorage.setItem(STORAGE_KEY, pref);
+  } catch {
+    /* storage unavailable - theme still applies for this session */
+  }
+  return applyTheme(pref);
 }
