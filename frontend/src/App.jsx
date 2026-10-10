@@ -282,6 +282,16 @@ export default function App() {
 
   const riskLevel = riskData?.risk_level || localRisk;
 
+  const predictedDemand =
+    riskData?.predicted_daily_demand_liters ?? null;
+
+  const demandForecast = Array.isArray(riskData?.demand_forecast)
+    ? riskData.demand_forecast
+    : [];
+
+  const demandPredictionStatus =
+    riskData?.demand_prediction_status || "NOT_RUN";
+
   const runway =
     riskData?.water_runway_days ??
     riskData?.runway_days ??
@@ -775,6 +785,162 @@ export default function App() {
                   </Panel>
                 </div>
               </>
+            )}
+
+            {/* Smart Demand Prediction */}
+            {(isOverview || isWater) && (
+              <Panel className="p-5 sm:p-6">
+                <SectionTitle
+                  eyebrow="Predictive intelligence"
+                  title="Smart Demand Prediction"
+                  description="Seven-day water demand forecast generated from consumption history."
+                  action={
+                    <Badge
+                      tone={
+                        demandPredictionStatus === "SUCCESS"
+                          ? "green"
+                          : "slate"
+                      }
+                    >
+                      {demandPredictionStatus === "SUCCESS"
+                        ? "Forecast ready"
+                        : "Run analysis"}
+                    </Badge>
+                  }
+                />
+
+                {demandPredictionStatus === "SUCCESS" &&
+                demandForecast.length > 0 ? (
+                  <>
+                    <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <MetricCard
+                        label="Predicted daily demand"
+                        value={formatNumber(predictedDemand ?? 0)}
+                        unit="L/day"
+                        icon="↗"
+                        tone="cyan"
+                        detail="Weighted forecast from recent consumption"
+                      />
+
+                      <MetricCard
+                        label="Total forecast demand"
+                        value={formatNumber(
+                          demandForecast.reduce(
+                            (total, item) =>
+                              total + Number(item.predicted_demand_liters || 0),
+                            0
+                          )
+                        )}
+                        unit="L / 7 days"
+                        icon="≈"
+                        tone="violet"
+                        detail="Estimated demand across the forecast period"
+                      />
+                    </div>
+
+                    <div className="h-[280px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                          data={demandForecast}
+                          margin={{ top: 12, right: 12, left: -12, bottom: 0 }}
+                        >
+                          <defs>
+                            <linearGradient
+                              id="cureDemandFill"
+                              x1="0"
+                              y1="0"
+                              x2="0"
+                              y2="1"
+                            >
+                              <stop
+                                offset="0%"
+                                stopColor="#22d3ee"
+                                stopOpacity={0.35}
+                              />
+                              <stop
+                                offset="100%"
+                                stopColor="#22d3ee"
+                                stopOpacity={0.02}
+                              />
+                            </linearGradient>
+                          </defs>
+
+                          <CartesianGrid
+                            stroke="rgba(148,163,184,0.13)"
+                            vertical={false}
+                          />
+
+                          <XAxis
+                            dataKey="day"
+                            tick={{ fill: "#cbd5e1", fontSize: 11 }}
+                            axisLine={false}
+                            tickLine={false}
+                            tickFormatter={(day) => `Day ${day}`}
+                          />
+
+                          <YAxis
+                            tick={{ fill: "#cbd5e1", fontSize: 10 }}
+                            axisLine={false}
+                            tickLine={false}
+                            tickFormatter={(value) => `${value / 1000}k`}
+                          />
+
+                          <Tooltip
+                            contentStyle={{
+                              background: "#101a28",
+                              border: "1px solid rgba(148,163,184,0.2)",
+                              borderRadius: 12,
+                              color: "#f1f5f9",
+                              fontSize: 12,
+                            }}
+                            formatter={(value) => [
+                              `${formatNumber(Number(value))} L`,
+                              "Predicted demand",
+                            ]}
+                            labelFormatter={(day) => `Day ${day}`}
+                          />
+
+                          <Area
+                            type="monotone"
+                            dataKey="predicted_demand_liters"
+                            name="Predicted demand"
+                            stroke="#67e8f9"
+                            strokeWidth={2.5}
+                            fill="url(#cureDemandFill)"
+                            activeDot={{
+                              r: 5,
+                              fill: "#67e8f9",
+                              stroke: "#0f172a",
+                              strokeWidth: 2,
+                            }}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <p className="mt-4 text-[10px] leading-5 text-slate-400">
+                      This baseline forecast assumes daily demand remains constant
+                      across the seven-day period. Actual consumption may vary.
+                    </p>
+                  </>
+                ) : (
+                  <div className="rounded-xl border border-white/[0.08] bg-black/10 px-4 py-8 text-center">
+                    <p className="text-sm font-medium text-white">
+                      No demand forecast available yet
+                    </p>
+                    <p className="mt-2 text-xs leading-5 text-slate-400">
+                      Run a water-risk analysis to generate the seven-day demand forecast.
+                    </p>
+                    <button
+                      onClick={runAnalysis}
+                      disabled={loading}
+                      className="mt-4 rounded-xl bg-cyan-300 px-4 py-2.5 text-xs font-bold text-slate-950 hover:bg-cyan-200 disabled:opacity-50"
+                    >
+                      {loading ? "Analyzing..." : "Generate forecast"}
+                    </button>
+                  </div>
+                )}
+              </Panel>
             )}
 
             {(isOverview || isClimate) && (
