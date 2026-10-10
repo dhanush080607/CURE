@@ -1,5 +1,4 @@
-
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AreaChart,
   Area,
@@ -24,6 +23,7 @@ const navItems = [
   { id: "water", icon: "≈", label: "Water intelligence" },
   { id: "climate", icon: "☼", label: "Climate monitor" },
   { id: "insights", icon: "✧", label: "AI insights" },
+  { id: "history", icon: "◷", label: "Water history" },
 ];
 
 const initialForm = {
@@ -198,35 +198,87 @@ export default function App() {
   const [chartMode, setChartMode] = useState("usage");
   const [backgroundMode, setBackgroundMode] = useState("storm");
 
+  const [weatherData, setWeatherData] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState("");
+
+  const [historyData, setHistoryData] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
+
+  const loadWeather = useCallback(async () => {
+    setWeatherLoading(true);
+    setWeatherError("");
+
+    try {
+      const params = new URLSearchParams({
+        latitude: String(form.latitude),
+        longitude: String(form.longitude),
+      });
+
+      const response = await fetch(
+        `http://127.0.0.1:8000/weather/forecast?${params.toString()}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Weather API returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      setWeatherData(data);
+    } catch (err) {
+      setWeatherError(err.message || "Unable to load weather.");
+    } finally {
+      setWeatherLoading(false);
+    }
+  }, [form.latitude, form.longitude]);
+
+  const loadWaterHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    setHistoryError("");
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/water/history");
+
+      if (!response.ok) {
+        throw new Error(`History API returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      setHistoryData(data.history || []);
+    } catch (err) {
+      setHistoryError(err.message || "Unable to load water history.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     document.title = "CURE — Climate & Utility Risk Engine";
-  }, []);
+    loadWeather();
+    loadWaterHistory();
+  }, [loadWeather, loadWaterHistory]);
 
   const averageConsumption = useMemo(() => {
     const values = form.consumption_history.map(Number);
-    return values.reduce((sum, value) => sum + value, 0) /
-      Math.max(values.length, 1);
+    return (
+      values.reduce((sum, value) => sum + value, 0) /
+      Math.max(values.length, 1)
+    );
   }, [form.consumption_history]);
 
   const availableWater =
-    (Number(form.tank_capacity_liters) *
-      Number(form.tank_level_percent)) /
-    100;
+    (Number(form.tank_capacity_liters) * Number(form.tank_level_percent)) / 100;
 
   const estimatedRunway =
     averageConsumption > 0 ? availableWater / averageConsumption : 0;
 
   const heatAdjustment = Math.max(0, (heatIndex - 28) * 1.8);
 
-  const adjustedRunway =
-    estimatedRunway / (1 + heatAdjustment / 100);
+  const adjustedRunway = estimatedRunway / (1 + heatAdjustment / 100);
 
   const localRisk =
-    adjustedRunway <= 2
-      ? "HIGH"
-      : adjustedRunway <= 4
-        ? "WATCH"
-        : "LOW";
+    adjustedRunway <= 2 ? "HIGH" : adjustedRunway <= 4 ? "WATCH" : "LOW";
 
   const riskLevel = riskData?.risk_level || localRisk;
 
@@ -236,8 +288,7 @@ export default function App() {
     Number(adjustedRunway.toFixed(1));
 
   const displayedHeatAdjustment =
-    riskData?.heat_adjustment_percent ??
-    Number(heatAdjustment.toFixed(1));
+    riskData?.heat_adjustment_percent ?? Number(heatAdjustment.toFixed(1));
 
   const formatNumber = (value) =>
     new Intl.NumberFormat("en-IN", {
@@ -311,6 +362,7 @@ export default function App() {
 
       setRiskData(data);
       setLastUpdated(new Date());
+      await loadWaterHistory();
     } catch (err) {
       setError(
         `${err.message}. The dashboard is showing locally calculated estimates.`
@@ -320,18 +372,11 @@ export default function App() {
     }
   }
 
-  const tone =
-    String(riskLevel).toUpperCase() === "HIGH" ||
-    String(riskLevel).toUpperCase() === "CRITICAL"
-      ? "red"
-      : String(riskLevel).toUpperCase() === "LOW"
-        ? "green"
-        : "amber";
-
   const isOverview = activeTab === "overview";
   const isWater = activeTab === "water";
   const isClimate = activeTab === "climate";
   const isInsights = activeTab === "insights";
+  const isHistory = activeTab === "history";
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#080e18] text-slate-100 selection:bg-cyan-300/20">
@@ -390,12 +435,21 @@ export default function App() {
               {[
                 ["Water system", "Active", "bg-emerald-400"],
                 ["Risk engine", "Ready", "bg-cyan-400"],
-                ["API connection", riskData ? "Synced" : "Local", riskData ? "bg-emerald-400" : "bg-amber-400"],
+                [
+                  "API connection",
+                  riskData ? "Synced" : "Local",
+                  riskData ? "bg-emerald-400" : "bg-amber-400",
+                ],
               ].map(([label, value, dot]) => (
-                <div key={label} className="flex items-center gap-2 text-xs text-slate-300">
+                <div
+                  key={label}
+                  className="flex items-center gap-2 text-xs text-slate-300"
+                >
                   <span className={`h-2 w-2 rounded-full ${dot}`} />
                   {label}
-                  <span className="ml-auto text-[10px] text-slate-400">{value}</span>
+                  <span className="ml-auto text-[10px] text-slate-400">
+                    {value}
+                  </span>
                 </div>
               ))}
             </div>
@@ -442,7 +496,9 @@ export default function App() {
                 </select>
 
                 <div className="hidden items-center gap-2 rounded-full border border-white/[0.08] bg-black/10 px-3 py-2 sm:flex">
-                  <span className={`h-2 w-2 rounded-full ${riskData ? "bg-emerald-400" : "bg-amber-400"}`} />
+                  <span
+                    className={`h-2 w-2 rounded-full ${riskData ? "bg-emerald-400" : "bg-amber-400"}`}
+                  />
                   <span className="text-[10px] text-slate-300">
                     {riskData ? `Synced ${currentTime}` : "Preview mode"}
                   </span>
@@ -486,7 +542,10 @@ export default function App() {
                     {error}
                   </p>
                 </div>
-                <button onClick={() => setError("")} className="text-xs text-amber-200">
+                <button
+                  onClick={() => setError("")}
+                  className="text-xs text-amber-200"
+                >
                   Dismiss
                 </button>
               </div>
@@ -577,16 +636,47 @@ export default function App() {
 
                     <div className="h-[270px] w-full px-2 pb-3 sm:px-5">
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={chartData} margin={{ top: 12, right: 10, left: -15, bottom: 0 }}>
+                        <AreaChart
+                          data={chartData}
+                          margin={{ top: 12, right: 10, left: -15, bottom: 0 }}
+                        >
                           <defs>
-                            <linearGradient id="cureUsageFill" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.35} />
-                              <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
+                            <linearGradient
+                              id="cureUsageFill"
+                              x1="0"
+                              y1="0"
+                              x2="0"
+                              y2="1"
+                            >
+                              <stop
+                                offset="0%"
+                                stopColor="#22d3ee"
+                                stopOpacity={0.35}
+                              />
+                              <stop
+                                offset="100%"
+                                stopColor="#22d3ee"
+                                stopOpacity={0}
+                              />
                             </linearGradient>
                           </defs>
-                          <CartesianGrid stroke="rgba(148,163,184,0.13)" vertical={false} />
-                          <XAxis dataKey="day" tick={{ fill: "#cbd5e1", fontSize: 11 }} axisLine={false} tickLine={false} dy={10} />
-                          <YAxis tick={{ fill: "#cbd5e1", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(value) => `${value / 1000}k`} />
+                          <CartesianGrid
+                            stroke="rgba(148,163,184,0.13)"
+                            vertical={false}
+                          />
+                          <XAxis
+                            dataKey="day"
+                            tick={{ fill: "#cbd5e1", fontSize: 11 }}
+                            axisLine={false}
+                            tickLine={false}
+                            dy={10}
+                          />
+                          <YAxis
+                            tick={{ fill: "#cbd5e1", fontSize: 10 }}
+                            axisLine={false}
+                            tickLine={false}
+                            tickFormatter={(value) => `${value / 1000}k`}
+                          />
                           <Tooltip
                             contentStyle={{
                               background: "#101a28",
@@ -595,7 +685,10 @@ export default function App() {
                               color: "#f1f5f9",
                               fontSize: 12,
                             }}
-                            formatter={(value) => [`${formatNumber(value)} L`, ""]}
+                            formatter={(value) => [
+                              `${formatNumber(value)} L`,
+                              "",
+                            ]}
                           />
                           {chartMode === "compare" && (
                             <Area
@@ -614,7 +707,12 @@ export default function App() {
                             stroke="#67e8f9"
                             strokeWidth={2.5}
                             fill="url(#cureUsageFill)"
-                            activeDot={{ r: 5, fill: "#67e8f9", stroke: "#0f172a", strokeWidth: 2 }}
+                            activeDot={{
+                              r: 5,
+                              fill: "#67e8f9",
+                              stroke: "#0f172a",
+                              strokeWidth: 2,
+                            }}
                           />
                         </AreaChart>
                       </ResponsiveContainer>
@@ -650,7 +748,9 @@ export default function App() {
                       min="0"
                       max="100"
                       value={form.tank_level_percent}
-                      onChange={(e) => updateField("tank_level_percent", Number(e.target.value))}
+                      onChange={(e) =>
+                        updateField("tank_level_percent", Number(e.target.value))
+                      }
                       className="mt-3 w-full cursor-pointer accent-cyan-300"
                     />
 
@@ -661,8 +761,16 @@ export default function App() {
                     </div>
 
                     <div className="mt-5 grid grid-cols-2 gap-3">
-                      <MiniStat label="Available reserve" value={`${formatNumber(availableWater)} L`} icon="◉" />
-                      <MiniStat label="Estimated runway" value={`${Number(runway).toFixed(1)} days`} icon="◷" />
+                      <MiniStat
+                        label="Available reserve"
+                        value={`${formatNumber(availableWater)} L`}
+                        icon="◉"
+                      />
+                      <MiniStat
+                        label="Estimated runway"
+                        value={`${Number(runway).toFixed(1)} days`}
+                        icon="◷"
+                      />
                     </div>
                   </Panel>
                 </div>
@@ -671,6 +779,205 @@ export default function App() {
 
             {(isOverview || isClimate) && (
               <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+                {/* Live Weather Monitor */}
+                <Panel className="p-5 sm:p-6 xl:col-span-2">
+                  <SectionTitle
+                    eyebrow="Live climate intelligence"
+                    title="Current Weather & Forecast"
+                    description={`Weather conditions for ${form.latitude}, ${form.longitude}`}
+                    action={
+                      <button
+                        onClick={loadWeather}
+                        disabled={weatherLoading}
+                        className="rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-xs font-semibold text-cyan-100 hover:bg-cyan-300/20 disabled:opacity-50"
+                      >
+                        {weatherLoading ? "Refreshing..." : "↻ Refresh weather"}
+                      </button>
+                    }
+                  />
+
+                  {weatherError && (
+                    <div className="mb-4 rounded-xl border border-rose-300/20 bg-rose-300/5 p-3 text-xs text-rose-200">
+                      {weatherError}
+                    </div>
+                  )}
+
+                  {weatherLoading && !weatherData && (
+                    <p className="py-8 text-center text-sm text-slate-400">
+                      Loading live weather data...
+                    </p>
+                  )}
+
+                  {weatherData?.current && (
+                    <>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                        <MetricCard
+                          label="Temperature"
+                          value={weatherData.current.temperature_c ?? "—"}
+                          unit="°C"
+                          icon="☼"
+                          detail="Current air temperature"
+                          tone="amber"
+                        />
+
+                        <MetricCard
+                          label="Feels like"
+                          value={weatherData.current.feels_like_c ?? "—"}
+                          unit="°C"
+                          icon="♨"
+                          detail="Apparent temperature"
+                          tone="violet"
+                        />
+
+                        <MetricCard
+                          label="Humidity"
+                          value={weatherData.current.humidity_percent ?? "—"}
+                          unit="%"
+                          icon="≋"
+                          detail="Relative humidity"
+                          tone="cyan"
+                        />
+
+                        <MetricCard
+                          label="Wind speed"
+                          value={weatherData.current.wind_speed_kmh ?? "—"}
+                          unit="km/h"
+                          icon="↝"
+                          detail="Current wind speed"
+                          tone="green"
+                        />
+                      </div>
+
+                      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <MiniStat
+                          label="Current precipitation"
+                          value={`${weatherData.current.precipitation_mm ?? "—"} mm`}
+                          icon="☂"
+                        />
+
+                        <MiniStat
+                          label="UV index · Daily maximum"
+                          value={
+                            weatherData.daily?.uv_index_max?.[0] ?? "—"
+                          }
+                          icon="☀"
+                        />
+                      </div>
+
+                      {weatherData.daily?.dates?.length > 0 && (
+                        <div className="mt-7 border-t border-white/[0.08] pt-6">
+                          <div className="mb-4">
+                            <h3 className="text-sm font-semibold text-white">
+                              7-Day Temperature Forecast
+                            </h3>
+                            <p className="mt-1 text-xs text-slate-400">
+                              Forecast maximum and minimum temperatures in °C
+                            </p>
+                          </div>
+
+                          <div className="h-[280px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart
+                                data={weatherData.daily.dates.map((date, index) => ({
+                                  day: new Date(
+                                    `${date}T12:00:00`
+                                  ).toLocaleDateString("en-IN", {
+                                    weekday: "short",
+                                    day: "numeric",
+                                  }),
+                                  maximum:
+                                    weatherData.daily.max_temperatures_c?.[index] ?? null,
+                                  minimum:
+                                    weatherData.daily.min_temperatures_c?.[index] ?? null,
+                                }))}
+                              >
+                                <defs>
+                                  <linearGradient
+                                    id="cureMaxTemperature"
+                                    x1="0"
+                                    y1="0"
+                                    x2="0"
+                                    y2="1"
+                                  >
+                                    <stop
+                                      offset="0%"
+                                      stopColor="#fb923c"
+                                      stopOpacity={0.3}
+                                    />
+                                    <stop
+                                      offset="100%"
+                                      stopColor="#fb923c"
+                                      stopOpacity={0}
+                                    />
+                                  </linearGradient>
+                                </defs>
+
+                                <CartesianGrid
+                                  stroke="rgba(148,163,184,0.13)"
+                                  vertical={false}
+                                />
+
+                                <XAxis
+                                  dataKey="day"
+                                  tick={{ fill: "#cbd5e1", fontSize: 10 }}
+                                  axisLine={false}
+                                  tickLine={false}
+                                />
+
+                                <YAxis
+                                  unit="°"
+                                  tick={{ fill: "#cbd5e1", fontSize: 10 }}
+                                  axisLine={false}
+                                  tickLine={false}
+                                />
+
+                                <Tooltip
+                                  contentStyle={{
+                                    background: "#101a28",
+                                    border: "1px solid rgba(148,163,184,0.2)",
+                                    borderRadius: 12,
+                                    color: "#f1f5f9",
+                                    fontSize: 12,
+                                  }}
+                                  formatter={(value, name) => [
+                                    `${value ?? "—"}°C`,
+                                    name === "maximum" ? "Maximum" : "Minimum",
+                                  ]}
+                                />
+
+                                <Area
+                                  type="monotone"
+                                  dataKey="maximum"
+                                  name="maximum"
+                                  stroke="#fb923c"
+                                  strokeWidth={2.5}
+                                  fill="url(#cureMaxTemperature)"
+                                  connectNulls={false}
+                                />
+
+                                <Area
+                                  type="monotone"
+                                  dataKey="minimum"
+                                  name="minimum"
+                                  stroke="#67e8f9"
+                                  strokeWidth={2}
+                                  fill="transparent"
+                                  connectNulls={false}
+                                />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      )}
+
+                      <p className="mt-4 text-[10px] text-slate-500">
+                        Latest weather observation: {weatherData.current.time ?? "Unavailable"}.
+                        Forecast values may change as new weather data becomes available.
+                      </p>
+                    </>
+                  )}
+                </Panel>
+
                 <Panel className="p-5 sm:p-6">
                   <SectionTitle
                     eyebrow="Climate monitor"
@@ -805,142 +1112,161 @@ export default function App() {
                       className="mt-2 w-full rounded-xl border border-white/10 bg-[#0a111c]/80 px-3 py-3 text-sm text-white outline-none focus:border-cyan-300/40"
                     />
                   </label>
-
-                  <div className="flex items-end">
-                    <button
-                      onClick={runAnalysis}
-                      disabled={loading}
-                      className="w-full rounded-xl bg-cyan-300 px-4 py-3 text-xs font-bold text-slate-950 transition hover:bg-cyan-200 disabled:opacity-60"
-                    >
-                      {loading ? "Analyzing system…" : "Analyze my system →"}
-                    </button>
-                  </div>
                 </div>
 
-                <div className="mt-6 border-t border-white/[0.08] pt-5">
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs font-medium text-slate-200">Daily consumption history</p>
-                    <p className="text-[10px] text-slate-400">Edit liters per day</p>
-                  </div>
+                <div className="mt-6 border-t border-white/[0.08] pt-6">
+                  <p className="text-xs font-semibold text-white">
+                    7-day consumption history (liters/day)
+                  </p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Modify daily usage values to simulate different patterns.
+                  </p>
 
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
-                    {form.consumption_history.map((value, index) => (
-                      <label key={index} className="block">
-                        <span className="mb-1.5 block text-[10px] text-slate-300">{dayNames[index]}</span>
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
+                    {form.consumption_history.map((val, idx) => (
+                      <div key={idx} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                        <span className="text-[10px] font-bold text-cyan-300">
+                          {dayNames[idx]}
+                        </span>
                         <input
                           type="number"
                           min="0"
-                          value={value}
-                          onChange={(e) => updateConsumption(index, Math.max(0, Number(e.target.value)))}
-                          className="w-full rounded-lg border border-white/[0.08] bg-[#0a111c]/80 px-2.5 py-2.5 text-xs text-slate-100 outline-none focus:border-cyan-300/40"
+                          value={val}
+                          onChange={(e) => updateConsumption(idx, e.target.value)}
+                          className="mt-2 w-full rounded-lg border border-white/10 bg-[#080e18] px-2.5 py-2 text-center text-xs font-semibold text-white outline-none focus:border-cyan-300/40"
                         />
-                      </label>
+                      </div>
                     ))}
                   </div>
                 </div>
               </Panel>
             )}
 
-            {(isOverview || isInsights) && (
-              <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-                <Panel className="relative overflow-hidden p-5 sm:p-6">
-                  <div className="pointer-events-none absolute right-[-25px] top-[-40px] h-40 w-40 rounded-full bg-violet-400/10 blur-3xl" />
-
-                  <SectionTitle
-                    eyebrow="AI decision support"
-                    title="Recommended next steps"
-                    description="Based on the current estimate and backend response when available."
-                    action={<span className="grid h-10 w-10 place-items-center rounded-xl border border-violet-300/20 bg-violet-300/10 text-xl text-violet-200">✧</span>}
-                  />
-
-                  <div className="relative rounded-xl border border-violet-300/15 bg-gradient-to-br from-violet-300/10 to-cyan-300/[0.04] p-5">
-                    <div className="flex items-center gap-2">
-                      <Badge tone="cyan">PRIORITY BRIEFING</Badge>
-                      <span className="text-[10px] text-slate-300">Water resilience</span>
-                    </div>
-
-                    <p className="mt-4 text-sm leading-7 text-slate-100">{aiAdvice}</p>
-
+            {isHistory && (
+              <Panel className="p-5 sm:p-6">
+                <SectionTitle
+                  eyebrow="Database records"
+                  title="Water history log"
+                  description={`${historyData.length} saved water-risk records`}
+                  action={
                     <button
-                      onClick={runAnalysis}
-                      disabled={loading}
-                      className="mt-5 rounded-lg border border-cyan-300/20 bg-cyan-300/10 px-4 py-2.5 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-300/20 disabled:opacity-50"
+                      onClick={loadWaterHistory}
+                      disabled={historyLoading}
+                      className="rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-xs font-semibold text-cyan-100 disabled:opacity-50"
                     >
-                      {loading ? "Refreshing…" : "Refresh analysis ↗"}
+                      {historyLoading ? "Loading..." : "↻ Refresh"}
                     </button>
-                  </div>
+                  }
+                />
 
-                  <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    {[
-                      ["Action 01", "Review usage", "Identify avoidable daily consumption."],
-                      ["Action 02", "Check reserves", "Verify the actual tank level."],
-                      ["Action 03", "Plan ahead", "Prepare a replenishment buffer."],
-                    ].map(([number, title, description]) => (
-                      <div key={number} className="rounded-xl border border-white/[0.08] bg-black/10 p-3">
-                        <span className="text-[10px] text-slate-400">{number}</span>
-                        <p className="mt-2 text-xs font-medium text-white">{title}</p>
-                        <p className="mt-1 text-[10px] leading-4 text-slate-300">{description}</p>
+                {historyError && (
+                  <p className="mb-4 rounded-xl border border-rose-300/20 p-3 text-xs text-rose-200">
+                    {historyError}
+                  </p>
+                )}
+
+                {historyLoading && historyData.length === 0 && (
+                  <p className="py-6 text-center text-sm text-slate-400">
+                    Loading saved records...
+                  </p>
+                )}
+
+                {!historyLoading && historyData.length === 0 && !historyError && (
+                  <p className="py-6 text-center text-sm text-slate-400">
+                    No saved water-risk records yet. Run an analysis first.
+                  </p>
+                )}
+
+                <div className="space-y-3">
+                  {historyData.map((record) => (
+                    <div
+                      key={record.id}
+                      className="rounded-xl border border-white/[0.08] bg-black/10 p-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-white">
+                            Record #{record.id}
+                          </p>
+                          <p className="mt-1 text-[10px] text-slate-400">
+                            {record.created_at
+                              ? new Date(record.created_at).toLocaleString()
+                              : "Date unavailable"}
+                          </p>
+                        </div>
+                        <RiskBadge level={record.risk_level} />
                       </div>
-                    ))}
-                  </div>
-                </Panel>
 
-                <Panel className="p-5 sm:p-6">
-                  <SectionTitle
-                    eyebrow="Resilience planning"
-                    title="Consumption outlook"
-                    description="Illustrative daily usage scenario."
-                  />
+                      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <MiniStat
+                          label="Available water"
+                          value={`${Number(record.available_water_liters || 0).toLocaleString("en-IN")} L`}
+                          icon="≈"
+                        />
+                        <MiniStat
+                          label="Daily consumption"
+                          value={`${Number(record.average_daily_consumption_liters || 0).toLocaleString("en-IN")} L`}
+                          icon="↗"
+                        />
+                        <MiniStat
+                          label="Water runway"
+                          value={
+                            record.water_runway_days == null
+                              ? "Unknown"
+                              : `${Number(record.water_runway_days).toFixed(1)} days`
+                          }
+                          icon="◷"
+                        />
+                        <MiniStat
+                          label="Maximum temperature"
+                          value={
+                            record.max_temperature_c == null
+                              ? "—"
+                              : `${record.max_temperature_c}°C`
+                          }
+                          icon="☼"
+                        />
+                      </div>
 
-                  <div className="mb-5 flex items-center justify-between rounded-xl border border-white/[0.08] bg-black/10 p-4">
-                    <div>
-                      <p className="text-[10px] text-slate-300">Estimated runway</p>
-                      <p className="mt-1 text-2xl font-semibold text-white">
-                        {Number(runway).toFixed(1)}
-                        <span className="ml-1 text-xs font-normal text-slate-300">days</span>
+                      <p className="mt-4 text-xs leading-5 text-slate-300">
+                        {record.risk_reason || record.recommendation || "No explanation saved."}
                       </p>
                     </div>
-                    <RiskBadge level={riskLevel} />
-                  </div>
-
-                  <div className="h-[200px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData} margin={{ top: 8, right: 0, left: -22, bottom: 0 }}>
-                        <CartesianGrid stroke="rgba(148,163,184,0.13)" vertical={false} />
-                        <XAxis dataKey="day" tick={{ fill: "#cbd5e1", fontSize: 10 }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fill: "#cbd5e1", fontSize: 10 }} axisLine={false} tickLine={false} />
-                        <Tooltip
-                          contentStyle={{
-                            background: "#101a28",
-                            border: "1px solid rgba(148,163,184,0.2)",
-                            borderRadius: 12,
-                            color: "#f1f5f9",
-                            fontSize: 11,
-                          }}
-                        />
-                        <Bar dataKey="usage" name="Consumption (L)" fill="#22d3ee" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  <p className="mt-3 text-[10px] leading-5 text-slate-400">
-                    This chart shows the entered consumption values; it is not a live weather forecast.
-                  </p>
-                </Panel>
-              </div>
+                  ))}
+                </div>
+              </Panel>
             )}
 
-            <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.10] py-5">
-              <div className="flex items-center gap-2 text-[10px] text-slate-300">
-                <span className="text-sm text-cyan-200">◈</span>
-                <span>CURE · Climate & Utility Risk Engine</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-4 text-[10px] text-slate-300">
-                <span>Risk engine: {riskData ? "API result" : "Local estimate"}</span>
-                <span>Updated: {currentTime}</span>
-                <span>Building a more resilient future</span>
-              </div>
-            </footer>
+            {(isOverview || isInsights) && (
+              <Panel className="p-5 sm:p-6">
+                <SectionTitle
+                  eyebrow="Intelligence console"
+                  title="AI & Ollama Advisory"
+                  description="Grounded guidance synthesized from your climate and tank telemetry."
+                  action={<Badge tone="cyan">Active model</Badge>}
+                />
+
+                <div className="rounded-xl border border-cyan-300/20 bg-cyan-300/[0.04] p-5">
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-10 w-10 place-items-center rounded-xl bg-cyan-300/10 text-cyan-200">
+                      ✧
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        CURE Synthesis Engine
+                      </p>
+                      <p className="text-[11px] text-cyan-300/80">
+                        Status: Ready & Operational
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="mt-4 whitespace-pre-line text-xs leading-6 text-slate-200">
+                    {aiAdvice}
+                  </p>
+                </div>
+              </Panel>
+            )}
           </div>
         </main>
       </div>

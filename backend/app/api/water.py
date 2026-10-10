@@ -1,9 +1,12 @@
-from fastapi import APIRouter
+from urllib import response
+
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
 from app.risk.risk_engine import calculate_water_risk
 from app.services.weather_service import get_weather_forecast
 from app.ai.agent import ask_cure
+from app.database import save_water_risk, get_water_history
 
 
 router = APIRouter(
@@ -124,9 +127,33 @@ Do not use Markdown formatting such as **, ##, or bullet points.
     # -----------------------------
     # 4. Return complete result
     # -----------------------------
-    return {
+    response = {
         **risk_result,
         "consumption_history": data.consumption_history,
         "weather_forecast": weather["max_temperatures_c"],
         "ai_advice": ai_advice,
+    }
+
+    history_id = save_water_risk(
+        request_data=data.model_dump(),
+        result=risk_result,
+    )
+
+    response["history_id"] = history_id
+
+    return response
+
+
+@router.get("/history")
+def water_history(limit: int = 20):
+    if not 1 <= limit <= 100:
+        raise HTTPException(
+            status_code=400,
+            detail="limit must be between 1 and 100",
+        )
+
+    history = get_water_history(limit)
+    return {
+        "count": len(history),
+        "history": history,
     }

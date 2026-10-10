@@ -6,6 +6,8 @@ from app.api.heat import router as heat_router
 from app.api.consumption import router as consumption_router
 from app.api.weather import router as weather_router
 from app.api.ai import router as ai_router
+from app.database import get_connection, init_database
+
 
 
 app = FastAPI(
@@ -44,3 +46,7 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
+@app.on_event("startup")
+def startup_event():
+    init_database()
