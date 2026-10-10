@@ -24,6 +24,8 @@ VENV = ROOT / "venv"
 PYTHON = VENV / "Scripts" / "python.exe"
 REQUIREMENTS = ROOT / "requirements.txt"
 
+LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1", "0:0:0:0:0:0:0:1"}
+
 
 def venv_python() -> Path:
     if os.name == "nt":
@@ -50,10 +52,46 @@ def ensure_venv() -> Path:
     if needs_install:
         print("[setup] installing dependencies (first run only)")
         run([str(python), "-m", "pip", "install", "--upgrade", "pip"])
-        run([str(python), "-m", "pip", "install", "-r", str(REQUIREMENTS)])
+        code = run([str(python), "-m", "pip", "install", "-r", str(REQUIREMENTS)])
+        if code != 0:
+            # Never record success for a failed install, otherwise every later
+            # run skips installation and dies with a confusing ImportError.
+            print()
+            print(f"[error] dependency installation failed (exit code {code}).")
+            print("        Fix the error above, then run this command again.")
+            print("        To retry from scratch, delete:")
+            print(f"          {VENV / '.deps-installed'}")
+            print()
+            raise SystemExit(1)
         marker.write_text("ok", encoding="utf-8")
 
     return python
+
+
+def guard_host(host: str) -> None:
+    """Refuse an externally reachable bind unless an API key is configured."""
+
+    if host in LOOPBACK_HOSTS:
+        return
+
+    if os.getenv("CURE_API_KEY", "").strip():
+        print(f"[warn] binding {host} with CURE_API_KEY auth enabled.")
+        return
+
+    print()
+    print(f"[error] refusing to bind {host} without authentication.")
+    print()
+    print("        A non-loopback host makes every /tanks, /water/* and /ai/*")
+    print("        endpoint reachable from the network with no credentials.")
+    print()
+    print("        Either keep the default loopback bind:")
+    print("            python backend/run.py")
+    print()
+    print("        or set a shared secret and pass the key as X-API-Key:")
+    print("            $env:CURE_API_KEY = \"<a long random string>\"")
+    print("            python backend/run.py --host 0.0.0.0")
+    print()
+    raise SystemExit(1)
 
 
 def port_owner(port: int) -> str | None:
@@ -144,6 +182,8 @@ def main() -> None:
         help="pick the next free port if the preferred one is busy",
     )
     args = parser.parse_args()
+
+    guard_host(args.host)
 
     python = ensure_venv()
     port = pick_port(args.port, args.host, args.port_scan)

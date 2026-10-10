@@ -1,5 +1,9 @@
 const API_BASE = (import.meta.env.VITE_API_BASE || "/api").replace(/\/$/, "");
 
+// Only needed when the backend runs with CURE_API_KEY set. It is a public
+// client-side value by design, exactly like the tile key.
+const API_KEY = (import.meta.env.VITE_API_KEY || "").trim();
+
 const REQUEST_TIMEOUT = 12000;
 
 export class ApiError extends Error {
@@ -19,7 +23,11 @@ async function request(path, { timeout = REQUEST_TIMEOUT, signal, ...init } = {}
     const response = await fetch(`${API_BASE}${path}`, {
       ...init,
       signal: controller.signal,
-      headers: { "Content-Type": "application/json", ...(init.headers || {}) },
+      headers: {
+        "Content-Type": "application/json",
+        ...(API_KEY ? { "X-API-Key": API_KEY } : {}),
+        ...(init.headers || {}),
+      },
     });
     if (!response.ok) {
       throw new ApiError(`Request failed with ${response.status}`, response.status);
@@ -79,5 +87,9 @@ export const api = {
       body: JSON.stringify(payload),
       timeout: 20000,
     });
+  },
+
+  waterHistory(limit = 8) {
+    return request(`/water/history?limit=${encodeURIComponent(limit)}`);
   },
 };

@@ -8,8 +8,19 @@ import httpx
 
 from app.config import WEATHER_CACHE_SECONDS
 
+# Upper bound on distinct cached responses. Geocoding queries are attacker
+# controlled, so an unbounded dict would let a caller grow memory without
+# limit. Oldest entries are dropped first.
+CACHE_MAX_ENTRIES = 512
+
 _cache: dict[str, tuple[float, Any]] = {}
 _lock = asyncio.Lock()
+
+
+def _evict_if_full() -> None:
+    while len(_cache) >= CACHE_MAX_ENTRIES:
+        oldest = min(_cache.items(), key=lambda kv: kv[1][0])[0]
+        del _cache[oldest]
 
 
 async def fetch_json(
@@ -43,6 +54,7 @@ async def fetch_json(
                 response.raise_for_status()
                 data = response.json()
             async with _lock:
+                _evict_if_full()
                 _cache[key] = (time.monotonic(), data)
             return data
         except (httpx.HTTPError, ValueError) as exc:
@@ -56,4 +68,8 @@ async def fetch_json(
 def cache_stats() -> dict[str, Any]:
     now = time.monotonic()
     fresh = sum(1 for ts, _ in _cache.values() if now - ts < WEATHER_CACHE_SECONDS)
-    return {"entries": len(_cache), "fresh": fresh}
+    return {
+        "entries": len(_cache),
+        "fresh": fresh,
+        "max_entries": CACHE_MAX_ENTRIES,
+    }

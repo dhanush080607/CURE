@@ -19,6 +19,11 @@ CORS_ORIGINS = [
     "http://127.0.0.1:4173",
 ]
 
+# Shared secret for the state-changing endpoints (/tanks, /water/*, /ai/*).
+# Empty means auth is disabled, which is only acceptable because run.py
+# refuses to bind a non-loopback host unless this is set.
+API_KEY = os.getenv("CURE_API_KEY", "").strip()
+
 DATABASE_PATH = Path(os.getenv("CURE_DB_PATH", BASE_DIR / "data" / "cure.db"))
 
 WEATHER_CACHE_SECONDS = int(os.getenv("CURE_CACHE_SECONDS", "300"))

@@ -56,10 +56,11 @@ export default function TemperatureView({ place, weather, unit }) {
             </p>
           ) : (
             <ul className="space-y-2.5">
-              {daily.map((d, i) => {
-                const left = lo != null ? ((d.min - lo) / span) * 100 : 0;
-                const width = lo != null ? Math.max(10, ((d.max - d.min) / span) * 100) : 10;
-                return (
+{daily.map((d, i) => {
+                  const hasRange = d.min != null && d.max != null && lo != null;
+                  const left = hasRange ? ((d.min - lo) / span) * 100 : 0;
+                  const width = hasRange ? Math.max(10, ((d.max - d.min) / span) * 100) : 10;
+                  return (
                 <li key={d.date} className="flex items-center gap-3">
                   <span className="w-[64px] shrink-0 text-[11px]" style={{ color: "var(--ink-2)" }}>
                     {dayLabel(d.date, i)}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   LineChart,
   Line,
@@ -8,14 +8,15 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-
-const API_BASE = (import.meta.env.VITE_API_BASE || "/api").replace(/\/$/, "");
+import { api } from "../data/api";
 
 const RISK_TONE = {
   LOW: "chip-good",
   WATCH: "chip-warn",
   HIGH: "chip-bad",
 };
+
+const HISTORY_LIMIT = 8;
 
 const initialForm = {
   tank_capacity_liters: 50000,
@@ -25,11 +26,25 @@ const initialForm = {
   longitude: 78.48,
 };
 
+function RunwayCell({ days }) {
+  if (days == null) return <span className="text-[var(--ink-3)]">not calculable</span>;
+  return (
+    <>
+      {days} days
+      <span className="ml-1 text-[10px] font-normal text-[var(--ink-3)]">
+        ({Math.round(days * 100) / 100})
+      </span>
+    </>
+  );
+}
+
 export default function CureWaterEngine() {
   const [form, setForm] = useState(initialForm);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [historyError, setHistoryError] = useState(null);
 
   const setField = (k, v) => setForm((p) => ({ ...p, [k]: Number(v) }));
 
@@ -40,23 +55,48 @@ export default function CureWaterEngine() {
       return { ...p, consumption_history: next };
     });
 
+  const loadHistory = useCallback(async () => {
+    try {
+      const data = await api.waterHistory(HISTORY_LIMIT);
+      setHistory(Array.isArray(data?.history) ? data.history : []);
+      setHistoryError(null);
+    } catch (err) {
+      setHistory([]);
+      setHistoryError(err instanceof Error ? err.message : "Could not load history.");
+    }
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    api
+      .waterHistory(HISTORY_LIMIT)
+      .then((data) => {
+        if (!alive) return;
+        setHistory(Array.isArray(data?.history) ? data.history : []);
+        setHistoryError(null);
+      })
+      .catch((err) => {
+        if (!alive) return;
+        setHistory([]);
+        setHistoryError(err instanceof Error ? err.message : "Could not load history.");
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const run = async () => {
     setLoading(true);
     setError(null);
     setResult(null);
 
     try {
-      const res = await fetch(`${API_BASE}/water/risk`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) throw new Error(`Backend responded ${res.status}`);
-      setResult(await res.json());
+      setResult(await api.waterRisk(form));
+      loadHistory();
     } catch (err) {
       setError(
         err instanceof TypeError
-          ? "Could not reach the backend. Start it with: uvicorn app.main:app --reload"
+          ? "Could not reach the backend. Start it with: python backend/run.py --reload"
           : err.message
       );
     } finally {
@@ -78,7 +118,7 @@ export default function CureWaterEngine() {
           },
           {
             label: "Water runway",
-            value: result ? `${result.water_runway_days ?? "--"} days` : "—",
+            value: result ? <RunwayCell days={result.water_runway_days} /> : "—",
             sub: result ? "from backend result" : "run analysis to compute",
             tone: "var(--accent)",
           },
@@ -279,9 +319,61 @@ export default function CureWaterEngine() {
           {loading ? "Running analysis…" : "Run risk analysis"}
         </button>
         <span className="text-[11px]" style={{ color: "var(--ink-3)" }}>
-          Posts to <span className="num">{API_BASE}/water/risk</span>
+          Posts to <span className="num">{api.base}/water/risk</span>
         </span>
       </div>
+
+      {historyError && (
+        <p className="text-[11px]" style={{ color: "var(--ink-3)" }}>
+          Stored assessments unavailable: {historyError}
+        </p>
+      )}
+
+      <section className="card overflow-hidden">
+        <header className="section-header">
+          <h2 className="section-title">Recent assessments</h2>
+          <span className="stat-chip chip-accent">{history.length}</span>
+        </header>
+
+        {history.length === 0 ? (
+          <p className="px-4 py-6 text-center text-[12px]" style={{ color: "var(--ink-3)" }}>
+            {historyError
+              ? "Could not reach the backend."
+              : "Run an analysis to record the first assessment."}
+          </p>
+        ) : (
+          <ul className="scroll-thin max-h-64 overflow-y-auto p-2">
+            {history.map((h) => (
+              <li
+                key={h.id}
+                className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5"
+                style={{ border: "1px solid var(--border)", background: "var(--surface-2)" }}
+              >
+                <div className="min-w-0">
+                  <p className="num text-[12px] font-semibold" style={{ color: "var(--ink)" }}>
+                    {Math.round(h.available_water_liters ?? 0).toLocaleString()} L available
+                    <span style={{ color: "var(--ink-3)" }}>
+                      {" "}
+                      · {Math.round(h.tank_level_percent ?? 0)}% full
+                    </span>
+                  </p>
+                  <p className="num mt-0.5 text-[10px]" style={{ color: "var(--ink-3)" }}>
+                    {String(h.created_at ?? "").replace("T", " ").replace("Z", " UTC")}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2.5">
+                  <span className="num text-[11px]" style={{ color: "var(--ink-2)" }}>
+                    {h.water_runway_days != null ? `${h.water_runway_days} d` : "—"}
+                  </span>
+                  <span className={`stat-chip ${RISK_TONE[h.risk_level] ?? "chip-warn"}`}>
+                    {h.risk_level ?? "—"}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {error && (
         <section

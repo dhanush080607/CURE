@@ -1,3 +1,6 @@
+import json
+import logging
+
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field, field_validator
 
@@ -6,7 +9,13 @@ from app.database import get_water_history, save_water_risk
 from app.risk.risk_engine import calculate_water_risk
 from app.services.weather_service import get_weather
 
+log = logging.getLogger(__name__)
+
 router = APIRouter(tags=["CURE"])
+
+# Upper bound on the serialised size of the caller-supplied Q&A payload.
+MAX_RISK_DATA_CHARS = 8000
+MAX_RISK_DATA_KEYS = 60
 
 
 class WaterRiskRequest(BaseModel):
@@ -78,6 +87,23 @@ def water_history(limit: int = Query(20, ge=1, le=100)):
 class AskRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=500)
     risk_data: dict
+
+    @field_validator("risk_data")
+    @classmethod
+    def bounded_payload(cls, value: dict) -> dict:
+        """Cap size and key count before anything reaches the prompt builder."""
+
+        if len(value) > MAX_RISK_DATA_KEYS:
+            raise ValueError(f"risk_data accepts at most {MAX_RISK_DATA_KEYS} keys")
+        try:
+            encoded = json.dumps(value, default=str)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("risk_data must be JSON-serialisable") from exc
+        if len(encoded) > MAX_RISK_DATA_CHARS:
+            raise ValueError(
+                f"risk_data must serialise to under {MAX_RISK_DATA_CHARS} characters"
+            )
+        return value
 
 
 @router.post("/ai/ask")

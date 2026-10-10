@@ -45,7 +45,13 @@ export default function WindView({ place, weather }) {
           value={weather?.windDirection ?? "\u2014"}
           sub={`${bearing}\u00B0 bearing`}
         />
-        <StatCard label="Next 6 h" value={hourlyWind.length} unit="pts" sub="hourly steps" tone="info" />
+        <StatCard
+          label="Next 6 h"
+          value={hourlyWind.length ? `${hourlyWind.length}` : "—"}
+          unit="pts"
+          sub="hourly steps"
+          tone="info"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

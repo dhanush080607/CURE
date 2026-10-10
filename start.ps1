@@ -16,8 +16,15 @@ function Start-Tab {
     param([string]$Title, [string]$Dir, [string]$Cmd)
 
     Write-Host "  starting $Title ..." -ForegroundColor DarkGray
+
+    # -EncodedCommand takes UTF-16LE base64, so a path containing spaces or
+    # a single quote cannot break out of the quoted Set-Location argument.
+    $script = "Set-Location -LiteralPath '$($Dir.Replace("'", "''"))'`n$Cmd"
+    $bytes = [System.Text.Encoding]::Unicode.GetBytes($script)
+    $encoded = [Convert]::ToBase64String($bytes)
+
     Start-Process -FilePath "powershell.exe" `
-        -ArgumentList "-NoExit", "-Command", "Set-Location '$Dir'; $Cmd" `
+        -ArgumentList "-NoExit", "-EncodedCommand", $encoded `
         -WorkingDirectory $Dir | Out-Null
 }
 
@@ -31,6 +38,10 @@ if (-not $BackendOnly) {
 }
 
 Write-Host ""
-Write-Host "  API      http://127.0.0.1:8000/docs" -ForegroundColor Cyan
-Write-Host "  Frontend http://localhost:5173" -ForegroundColor Cyan
+if (-not $FrontendOnly) {
+    Write-Host "  API      http://127.0.0.1:8000/docs" -ForegroundColor Cyan
+}
+if (-not $BackendOnly) {
+    Write-Host "  Frontend http://localhost:5173" -ForegroundColor Cyan
+}
 Write-Host ""

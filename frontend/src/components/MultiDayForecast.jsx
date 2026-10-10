@@ -24,8 +24,10 @@ export default function MultiDayForecast({ weather, unit }) {
       ) : (
         <ul className="p-2">
           {days.map((d, i) => {
-            const left = lo != null ? ((d.min - lo) / span) * 100 : 0;
-            const width = lo != null ? Math.max(12, ((d.max - d.min) / span) * 100) : 12;
+            // A missing min/max made these NaN, which rendered as "NaN%" widths.
+            const hasRange = d.min != null && d.max != null && lo != null;
+            const left = hasRange ? ((d.min - lo) / span) * 100 : 0;
+            const width = hasRange ? Math.max(12, ((d.max - d.min) / span) * 100) : 12;
             const isToday = i === 0;
             const [, icon] = conditionMeta(d.code);
 
@@ -56,9 +58,9 @@ export default function MultiDayForecast({ weather, unit }) {
                   )}
                 </div>
 
-                <span className="num w-8 shrink-0 text-right text-[11px]" style={{ color: "var(--ink-3)" }}>
-                  {convertTemp(d.min, unit)}&deg;
-                </span>
+<span className="num w-8 shrink-0 text-right text-[11px]" style={{ color: "var(--ink-3)" }}>
+                      {convertTemp(d.min, unit)}&deg;
+                    </span>
 
                 <div
                   className="relative h-1 flex-1 overflow-hidden rounded-full"

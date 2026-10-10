@@ -54,20 +54,29 @@ def _shape(raw: dict[str, Any], air: dict[str, Any] | None) -> dict[str, Any]:
     start = next((i for i, t in enumerate(times) if t[:13] >= now_iso[:13]), 0)
 
     humidity_series = hourly.get("relative_humidity_2m") or []
+    temp_series = hourly.get("temperature_2m") or []
+    code_series = hourly.get("weather_code") or []
+    pop_series = hourly.get("precipitation_probability") or []
+    wind_series = hourly.get("wind_speed_10m") or []
+    pressure_series = hourly.get("pressure_msl") or []
+    precip_series = hourly.get("precipitation") or []
+    is_day_series = hourly.get("is_day") or []
 
     hours = []
     for i in range(start, min(start + 24, len(times))):
         hours.append(
             {
                 "time": _hour_label(times[i]),
-                "temp": (hourly.get("temperature_2m") or [None])[i],
-                "code": (hourly.get("weather_code") or [None])[i],
-                "pop": (hourly.get("precipitation_probability") or [0])[i] or 0,
-                "wind": (hourly.get("wind_speed_10m") or [None])[i],
-                "humidity": humidity_series[i] if i < len(humidity_series) else None,
-                "pressure": _round_or_none((hourly.get("pressure_msl") or [None])[i]),
-                "precip": (hourly.get("precipitation") or [0])[i] or 0,
-                "isDay": (hourly.get("is_day") or [1])[i] != 0,
+                # Every series is read through _at() because upstream may return
+                # arrays shorter than `times`; direct indexing raised IndexError.
+                "temp": _at(temp_series, i),
+                "code": _at(code_series, i),
+                "pop": _at(pop_series, i) or 0,
+                "wind": _at(wind_series, i),
+                "humidity": _at(humidity_series, i),
+                "pressure": _round_or_none(_at(pressure_series, i)),
+                "precip": _at(precip_series, i) or 0,
+                "isDay": (_at(is_day_series, i) or 1) != 0,
             }
         )
 
@@ -236,7 +245,7 @@ async def search_places(query: str, count: int = 8) -> list[dict[str, Any]]:
 
     return [
         {
-            "id": f"{r['latitude']},{r['longitude']}",
+            "id": f"{r.get('latitude')},{r.get('longitude')}",
             "name": r.get("name"),
             "lat": r.get("latitude"),
             "lon": r.get("longitude"),

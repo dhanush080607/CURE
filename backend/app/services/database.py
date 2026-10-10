@@ -128,6 +128,12 @@ def update_tank(tank_id: int, **fields: Any) -> dict[str, Any] | None:
     if not columns:
         return get_tank(tank_id)
 
+    # Column names are interpolated, so they must provably come from the
+    # allowlist above. Values stay parameterised regardless.
+    unknown = [c for c in columns if c not in TANK_FIELD_MAP.values()]
+    if unknown:
+        raise ValueError(f"Refusing to update unknown columns: {unknown}")
+
     assignments = ", ".join(f"{col} = ?" for col in columns)
     params = [*columns.values(), _now(), tank_id]
 

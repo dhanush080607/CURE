@@ -19,6 +19,10 @@ export default class ErrorBoundary extends Component {
     const { error, info } = this.state;
     if (!error) return this.props.children;
 
+    // Component stacks and raw messages expose internal paths and data shapes,
+    // so they are shown for local debugging only - never in a build.
+    const isDev = import.meta.env.DEV;
+
     return (
       <div
         style={{
@@ -51,29 +55,32 @@ export default class ErrorBoundary extends Component {
           </div>
 
           <p style={{ margin: "0 0 12px", fontSize: 13, color: "var(--ink-2)" }}>
-            The app caught the error instead of showing a blank page. Copy the details below
-            into a bug report.
+            {isDev
+              ? "The app caught the error instead of showing a blank page. Copy the details below into a bug report."
+              : "The app caught the error instead of showing a blank page. Reload to try again."}
           </p>
 
-          <pre
-            style={{
-              margin: 0,
-              padding: 14,
-              borderRadius: 8,
-              background: "var(--surface-2)",
-              border: "1px solid var(--border)",
-              color: "var(--ink)",
-              fontSize: 12,
-              lineHeight: 1.5,
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-              maxHeight: 280,
-              overflow: "auto",
-            }}
-          >
-            {String(error?.message || error)}
-            {info?.componentStack ? `\n\n${info.componentStack.trim()}` : ""}
-          </pre>
+          {isDev && (
+            <pre
+              style={{
+                margin: 0,
+                padding: 14,
+                borderRadius: 8,
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
+                color: "var(--ink)",
+                fontSize: 12,
+                lineHeight: 1.5,
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                maxHeight: 280,
+                overflow: "auto",
+              }}
+            >
+              {String(error?.message || error)}
+              {info?.componentStack ? `\n\n${info.componentStack.trim()}` : ""}
+            </pre>
+          )}
 
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
             <button
@@ -91,20 +98,22 @@ export default class ErrorBoundary extends Component {
             >
               Reload
             </button>
-            <button
-              onClick={() => this.setState({ error: null, info: null })}
-              style={{
-                padding: "8px 14px",
-                borderRadius: 8,
-                border: "1px solid var(--border)",
-                background: "var(--surface-2)",
-                color: "var(--ink-2)",
-                fontSize: 13,
-                cursor: "pointer",
-              }}
-            >
-              Try again
-            </button>
+            {!isDev && (
+              <button
+                onClick={() => this.setState({ error: null, info: null })}
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: 8,
+                  border: "1px solid var(--border)",
+                  background: "var(--surface-2)",
+                  color: "var(--ink-2)",
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
+                Try again
+              </button>
+            )}
           </div>
         </div>
       </div>

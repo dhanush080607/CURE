@@ -1,8 +1,19 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, Query
 
 from app.services.weather_service import get_weather, search_places
 
+log = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/weather", tags=["Weather"])
+
+
+def _upstream_error(exc: Exception, what: str) -> HTTPException:
+    """Log the real cause server-side; never echo it to the caller."""
+
+    log.warning("%s upstream failed: %s: %s", what, type(exc).__name__, exc)
+    return HTTPException(status_code=502, detail=f"{what} upstream unavailable.")
 
 
 @router.get("/current")
@@ -15,7 +26,7 @@ async def current_weather(
     try:
         return await get_weather(latitude, longitude)
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Weather upstream unavailable: {exc}")
+        raise _upstream_error(exc, "Weather") from exc
 
 
 @router.get("/forecast")
@@ -38,4 +49,4 @@ async def search(
     try:
         return await search_places(q, count)
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Geocoding unavailable: {exc}")
+        raise _upstream_error(exc, "Geocoding") from exc

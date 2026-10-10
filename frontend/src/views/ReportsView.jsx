@@ -57,7 +57,7 @@ export default function ReportsView({ place, weather, unit = "C" }) {
                     {convertTemp(d.min, unit)}&deg; / {convertTemp(d.max, unit)}&deg;{unit}
                   </span>
                   <span className="num" style={{ color: "var(--ink-2)" }}>
-                    {d.pop}% rain
+                    {d.pop != null ? `${d.pop}% rain` : "no rain data"}
                   </span>
                 </li>
               ))}

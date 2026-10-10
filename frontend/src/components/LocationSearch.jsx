@@ -7,10 +7,26 @@ const RECENT_KEY = "cure.recent";
 function readRecent() {
   try {
     const raw = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
-    return Array.isArray(raw) ? raw.slice(0, 6) : [];
+    if (!Array.isArray(raw)) return [];
+    // Stored values are user-writable, so drop anything that is not a finite
+    // coordinate pair. Rendering later calls .toFixed() on these.
+    return raw
+      .filter(
+        (r) =>
+          r &&
+          typeof r === "object" &&
+          Number.isFinite(Number(r.lat)) &&
+          Number.isFinite(Number(r.lon))
+      )
+      .slice(0, 6);
   } catch {
     return [];
   }
+}
+
+function fmtCoord(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n.toFixed(2) : "—";
 }
 
 export default function LocationSearch({ onClose, onPick }) {
@@ -142,7 +158,7 @@ export default function LocationSearch({ onClose, onPick }) {
                       </span>
                     </span>
                     <span className="num shrink-0 text-[11px]" style={{ color: "var(--ink-3)" }}>
-                      {Number(r.lat).toFixed(2)}, {Number(r.lon).toFixed(2)}
+                      {fmtCoord(r.lat)}, {fmtCoord(r.lon)}
                     </span>
                   </button>
                 </li>
@@ -172,7 +188,7 @@ export default function LocationSearch({ onClose, onPick }) {
                       </span>
                     </span>
                     <span className="num shrink-0 text-[11px]" style={{ color: "var(--ink-3)" }}>
-                      {r.lat.toFixed(2)}, {r.lon.toFixed(2)}
+                      {fmtCoord(r.lat)}, {fmtCoord(r.lon)}
                     </span>
                   </button>
                 </li>
