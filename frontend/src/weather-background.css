@@ -1,0 +1,299 @@
+
+.weather-scene {
+  --sky-top: #050b18;
+  --sky-mid: #102b50;
+  --sky-bottom: #1c3c58;
+  --glow-a: rgba(0, 204, 255, 0.19);
+  --glow-b: rgba(95, 65, 255, 0.16);
+  --horizon: rgba(24, 199, 255, 0.2);
+
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  isolation: isolate;
+  background: var(--sky-top);
+}
+
+.weather-scene--clear {
+  --sky-top: #10152d;
+  --sky-mid: #243b70;
+  --sky-bottom: #8a4f60;
+  --glow-a: rgba(255, 176, 84, 0.27);
+  --glow-b: rgba(96, 99, 255, 0.17);
+  --horizon: rgba(255, 166, 104, 0.25);
+}
+
+.weather-scene--heat {
+  --sky-top: #1b1023;
+  --sky-mid: #542b3a;
+  --sky-bottom: #a95845;
+  --glow-a: rgba(255, 104, 54, 0.27);
+  --glow-b: rgba(255, 181, 75, 0.14);
+  --horizon: rgba(255, 126, 75, 0.27);
+}
+
+.weather-scene__base {
+  position: absolute;
+  inset: -8%;
+  background:
+    radial-gradient(ellipse at 75% 35%, var(--glow-a), transparent 37%),
+    radial-gradient(ellipse at 15% 80%, var(--glow-b), transparent 40%),
+    linear-gradient(
+      180deg,
+      var(--sky-top) 0%,
+      var(--sky-mid) 49%,
+      var(--sky-bottom) 100%
+    );
+  animation: sky-breathe 16s ease-in-out infinite alternate;
+}
+
+.weather-scene__glow {
+  position: absolute;
+  width: 55vw;
+  height: 55vw;
+  max-width: 850px;
+  max-height: 850px;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.7;
+  mix-blend-mode: screen;
+  animation: glow-drift 25s ease-in-out infinite alternate;
+}
+
+.weather-scene__glow--one {
+  top: -22%;
+  right: -12%;
+  background: var(--glow-a);
+}
+
+.weather-scene__glow--two {
+  bottom: -32%;
+  left: -18%;
+  background: var(--glow-b);
+  animation-delay: -9s;
+  animation-duration: 32s;
+}
+
+.weather-scene__horizon {
+  position: absolute;
+  top: 24%;
+  right: 8%;
+  width: clamp(180px, 27vw, 390px);
+  aspect-ratio: 1;
+  opacity: 0.9;
+  filter: blur(1px);
+}
+
+.weather-scene__sun {
+  position: absolute;
+  top: 22%;
+  left: 32%;
+  width: 34%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 35%,
+    #fff8dc,
+    #8beaff 34%,
+    rgba(46, 179, 255, 0.25) 67%,
+    transparent 72%
+  );
+  box-shadow:
+    0 0 45px rgba(85, 209, 255, 0.45),
+    0 0 120px rgba(74, 145, 255, 0.22);
+  animation: sun-pulse 7s ease-in-out infinite alternate;
+}
+
+.weather-scene__haze {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse,
+    var(--horizon) 0%,
+    transparent 68%
+  );
+  filter: blur(30px);
+}
+
+.weather-scene__cloud {
+  position: absolute;
+  width: 65vw;
+  height: 20vw;
+  min-height: 150px;
+  max-height: 300px;
+  border-radius: 50%;
+  filter: blur(42px);
+  opacity: 0.38;
+  background: linear-gradient(
+    110deg,
+    rgba(17, 36, 68, 0.2),
+    rgba(91, 137, 185, 0.5),
+    rgba(20, 29, 62, 0.4)
+  );
+  animation: cloud-drift 48s ease-in-out infinite alternate;
+}
+
+.weather-scene__cloud--one {
+  top: 9%;
+  left: -14%;
+}
+
+.weather-scene__cloud--two {
+  top: 34%;
+  right: -28%;
+  opacity: 0.3;
+  animation-duration: 63s;
+  animation-delay: -18s;
+}
+
+.weather-scene__cloud--three {
+  bottom: 9%;
+  left: 12%;
+  width: 75vw;
+  opacity: 0.2;
+  animation-duration: 70s;
+  animation-delay: -25s;
+}
+
+.weather-scene__rain {
+  position: absolute;
+  inset: -40% -10%;
+  opacity: 0.27;
+  transform: rotate(12deg);
+  background-image: repeating-linear-gradient(
+    175deg,
+    transparent 0px,
+    transparent 16px,
+    rgba(166, 222, 255, 0.34) 17px,
+    transparent 18px,
+    transparent 29px
+  );
+  background-size: 90px 120px;
+  animation: rain-fall 0.8s linear infinite;
+}
+
+.weather-scene__rain--two {
+  opacity: 0.13;
+  background-size: 130px 160px;
+  animation-duration: 1.25s;
+  animation-delay: -0.4s;
+}
+
+.weather-scene__rain--three {
+  opacity: 0.08;
+  background-size: 65px 100px;
+  animation-duration: 0.65s;
+  animation-delay: -0.2s;
+}
+
+.weather-scene__lightning {
+  position: absolute;
+  inset: 0;
+  background: rgba(181, 221, 255, 0);
+  opacity: 0;
+  transition: opacity 80ms ease;
+}
+
+.weather-scene__lightning.is-flashing {
+  opacity: 1;
+  background:
+    radial-gradient(
+      ellipse at 60% 15%,
+      rgba(211, 237, 255, 0.32),
+      transparent 54%
+    ),
+    rgba(161, 198, 255, 0.035);
+}
+
+.weather-scene__particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.weather-scene__particles span {
+  position: absolute;
+  left: var(--x);
+  bottom: -15px;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #9ceaff;
+  box-shadow: 0 0 9px 2px rgba(66, 210, 255, 0.3);
+  opacity: 0;
+  animation: particle-rise var(--duration) linear var(--delay) infinite;
+}
+
+.weather-scene__vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(4, 9, 19, 0.23),
+      transparent 30%,
+      rgba(4, 9, 19, 0.33) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(4, 9, 19, 0.36),
+      transparent 50%,
+      rgba(4, 9, 19, 0.18)
+    );
+}
+
+.weather-scene__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.08;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.24'/%3E%3C/svg%3E");
+}
+
+@keyframes sky-breathe {
+  from { transform: scale(1); }
+  to { transform: scale(1.09); }
+}
+
+@keyframes glow-drift {
+  from { transform: translate3d(-3%, 1%, 0) scale(0.92); }
+  to { transform: translate3d(5%, -5%, 0) scale(1.12); }
+}
+
+@keyframes sun-pulse {
+  from { transform: scale(0.96); opacity: 0.75; }
+  to { transform: scale(1.05); opacity: 1; }
+}
+
+@keyframes cloud-drift {
+  from { transform: translate3d(-5%, 0, 0) scale(1); }
+  to { transform: translate3d(9%, 10%, 0) scale(1.08); }
+}
+
+@keyframes rain-fall {
+  from { background-position: 0 0; }
+  to { background-position: -30px 220px; }
+}
+
+@keyframes particle-rise {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  15% { opacity: 0.7; }
+  80% { opacity: 0.45; }
+  100% {
+    transform: translate3d(25px, -105vh, 0);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .weather-scene *,
+  .weather-scene {
+    animation: none !important;
+    transition: none !important;
+  }
+}
