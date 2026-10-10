@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field, field_validator
 
 from app.ai import agent
+from app.database import get_water_history, save_water_risk
 from app.risk.risk_engine import calculate_water_risk
 from app.services.weather_service import get_weather
 
@@ -51,13 +52,27 @@ async def water_risk(data: WaterRiskRequest):
 
     explanation = await agent.explain(risk)
 
+    history_id = save_water_risk(
+        request_data=data.model_dump(),
+        result=risk,
+    )
+
     return {
         **risk,
         "consumption_history": data.consumption_history,
         "weather_source": weather.get("source"),
         "max_temperature_window_c": max_temperature,
+        "history_id": history_id,
         **explanation,
     }
+
+
+@router.get("/water/history")
+def water_history(limit: int = Query(20, ge=1, le=100)):
+    """Recent risk assessments, newest first."""
+
+    history = get_water_history(limit)
+    return {"count": len(history), "history": history}
 
 
 class AskRequest(BaseModel):

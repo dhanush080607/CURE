@@ -6,6 +6,7 @@ from app.api.tanks import router as tanks_router
 from app.api.water import router as water_router
 from app.api.weather import router as weather_router
 from app.config import API_DESCRIPTION, API_TITLE, API_VERSION, CORS_ORIGINS
+from app.database import init_database
 from app.services import database
 from app.services.http_client import cache_stats
 
@@ -31,6 +32,7 @@ app.include_router(water_router)
 @app.on_event("startup")
 def on_startup() -> None:
     database.init_db()
+    init_database()
     database.seed_if_empty()
 
 
