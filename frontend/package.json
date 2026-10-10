@@ -7,17 +7,18 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "api": "python ../backend/run.py --reload",
+    "api:check": "python ../backend/run.py --port 8000"
   },
   "dependencies": {
-    "@react-three/fiber": "^9.8.1",
     "@tailwindcss/vite": "^4.3.3",
-    "animejs": "^4.5.0",
+    "maplibre-gl": "^6.13.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.4",
     "recharts": "^3.10.1",
-    "tailwindcss": "^4.3.3",
-    "three": "^0.186.1"
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@types/react": "^19.2.18",

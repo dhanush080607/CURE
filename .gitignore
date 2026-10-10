@@ -36,7 +36,12 @@ Thumbs.db
 # Local development
 *.sqlite3
 *.db
+backend/data/
+backend/venv/.deps-installed
 
 # Secrets
 *.pem
 *.key
+.env
+.env.*
+!.env.example
