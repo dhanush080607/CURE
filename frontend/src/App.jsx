@@ -1,854 +1,711 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  LineChart,
-  Line,
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
 } from "recharts";
 
-function App() {
-  const [formData, setFormData] = useState({
-    tank_capacity_liters: 50000,
-    tank_level_percent: 62,
-    consumption_history: [
-      7200,
-      7600,
-      7400,
-      8000,
-      7300,
-      7700,
-      7500,
-    ],
-    latitude: 13.55,
-    longitude: 78.5,
-  });
+const API_URL = "http://127.0.0.1:8000/water/risk";
 
-  const [riskData, setRiskData] = useState(null);
-  const [loading, setLoading] = useState(false);
+const INITIAL_FORM = {
+  tank_capacity_liters: 50000,
+  tank_level_percent: 62,
+  consumption_history: [7200, 7600, 7400, 8000, 7300, 7700, 7500],
+  latitude: 13.55,
+  longitude: 78.5,
+};
 
-  const updateField = (field, value) => {
-    setFormData((previous) => ({
-      ...previous,
-      [field]: Number(value),
-    }));
-  };
+const formatNumber = (value, digits = 1) => {
+  const n = Number(value);
+  return Number.isFinite(n)
+    ? n.toLocaleString("en-IN", { maximumFractionDigits: digits })
+    : "—";
+};
 
-  const updateConsumption = (index, value) => {
-    setFormData((previous) => {
-      const updatedHistory = [...previous.consumption_history];
+function Panel({ title, subtitle, children, className = "" }) {
+  return (
+    <section
+      className={`rounded-2xl border border-white/10 bg-slate-900/65 p-5 shadow-xl shadow-black/10 ${className}`}
+    >
+      <h2 className="text-lg font-semibold text-white">{title}</h2>
+      {subtitle && (
+        <p className="mt-1 text-sm leading-6 text-slate-400">{subtitle}</p>
+      )}
+      {children}
+    </section>
+  );
+}
 
-      updatedHistory[index] = Number(value);
-
-      return {
-        ...previous,
-        consumption_history: updatedHistory,
-      };
-    });
-  };
-
-  const analyzeRisk = async () => {
-    setLoading(true);
-    setRiskData(null);
-
-    try {
-      const response = await fetch("http://127.0.0.1:8000/water/risk", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch water risk");
-      }
-
-      const data = await response.json();
-
-      setRiskData(data);
-    } catch (error) {
-      console.error(error);
-      alert("Could not connect to CURE backend.");
-    } finally {
-      setLoading(false);
-    }
+function Metric({ label, value, detail, tone = "cyan" }) {
+  const tones = {
+    cyan: "border-cyan-300/20",
+    green: "border-emerald-300/20",
+    amber: "border-amber-300/20",
+    red: "border-rose-300/20",
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-
-      {/* Header / Judge Pitch Header */}
-      <header className="border-b border-slate-800">
-        <div className="mx-auto max-w-7xl px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-400/10 text-2xl">
-                💧
-              </div>
-
-              <div>
-                <h1 className="text-3xl font-black tracking-tight text-white">
-                  CURE
-                </h1>
-
-                <p className="text-sm text-cyan-400">
-                  Climate & Utility Risk Engine
-                </p>
-              </div>
-            </div>
-
-            <div className="hidden rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 sm:block">
-              <p className="text-xs text-slate-500">
-                CURE ENGINE
-              </p>
-
-              <p className="mt-1 text-sm font-semibold text-cyan-400">
-                ● Online
-              </p>
-            </div>
-          </div>
-
-          <p className="mt-4 max-w-2xl text-slate-400">
-            Predict water supply risk before it becomes a crisis.
-            CURE combines consumption, water availability, and climate
-            conditions to estimate your water runway and recommend action.
-          </p>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-6 py-10">
-
-        {/* Live Risk Snapshot Row */}
-        <div className="mb-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Water Available
-            </p>
-
-            <p className="mt-2 text-2xl font-bold text-white">
-              {riskData
-                ? `${riskData.available_water_liters.toLocaleString()} L`
-                : "—"}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Water Runway
-            </p>
-
-            <p className="mt-2 text-2xl font-bold text-white">
-              {riskData
-                ? riskData.water_runway_days !== null
-                  ? `${riskData.water_runway_days} days`
-                  : "Unavailable"
-                : "—"}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Current Risk
-            </p>
-
-            <p
-              className={`mt-2 text-2xl font-bold ${
-                !riskData
-                  ? "text-slate-500"
-                  : riskData.risk_level === "HIGH"
-                  ? "text-red-400"
-                  : riskData.risk_level === "WATCH"
-                  ? "text-orange-400"
-                  : "text-emerald-400"
-              }`}
-            >
-              {riskData ? riskData.risk_level : "—"}
-            </p>
-          </div>
-        </div>
-
-        {/* Input Section */}
-        <section className="mb-10 rounded-2xl border border-slate-800 bg-slate-900 p-6">
-
-          <h3 className="mb-6 text-xl font-semibold">
-            Water Supply Details
-          </h3>
-
-          <div className="grid gap-6 md:grid-cols-2">
-
-            {/* Tank Capacity */}
-            <div>
-              <label className="mb-2 block text-sm text-slate-400">
-                Tank Capacity (Liters)
-              </label>
-
-              <input
-                type="number"
-                value={formData.tank_capacity_liters}
-                onChange={(e) =>
-                  updateField(
-                    "tank_capacity_liters",
-                    e.target.value
-                  )
-                }
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-cyan-400"
-              />
-            </div>
-
-            {/* Tank Level */}
-            <div>
-              <label className="mb-2 block text-sm text-slate-400">
-                Current Tank Level (%)
-              </label>
-
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={formData.tank_level_percent}
-                onChange={(e) =>
-                  updateField(
-                    "tank_level_percent",
-                    e.target.value
-                  )
-                }
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-cyan-400"
-              />
-            </div>
-
-            {/* Latitude */}
-            <div>
-              <label className="mb-2 block text-sm text-slate-400">
-                Latitude
-              </label>
-
-              <input
-                type="number"
-                step="any"
-                value={formData.latitude}
-                onChange={(e) =>
-                  updateField("latitude", e.target.value)
-                }
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-cyan-400"
-              />
-            </div>
-
-            {/* Longitude */}
-            <div>
-              <label className="mb-2 block text-sm text-slate-400">
-                Longitude
-              </label>
-
-              <input
-                type="number"
-                step="any"
-                value={formData.longitude}
-                onChange={(e) =>
-                  updateField("longitude", e.target.value)
-                }
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-cyan-400"
-              />
-            </div>
-
-          </div>
-        </section>
-
-        {/* Consumption */}
-        <section className="mb-10 rounded-2xl border border-slate-800 bg-slate-900 p-6">
-
-          <h3 className="mb-2 text-xl font-semibold">
-            Daily Consumption
-          </h3>
-
-          <p className="mb-6 text-sm text-slate-400">
-            Enter the last 7 days of water consumption in liters.
-          </p>
-
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
-
-            {formData.consumption_history.map((value, index) => (
-              <div key={index}>
-
-                <label className="mb-2 block text-sm text-slate-400">
-                  Day {index + 1}
-                </label>
-
-                <input
-                  type="number"
-                  min="0"
-                  value={value}
-                  onChange={(e) =>
-                    updateConsumption(
-                      index,
-                      e.target.value
-                    )
-                  }
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 outline-none focus:border-cyan-400"
-                />
-
-              </div>
-            ))}
-
-          </div>
-        </section>
-
-        {/* Analyze Button */}
-        <button
-          onClick={analyzeRisk}
-          disabled={loading}
-          className="mb-10 w-full rounded-xl bg-cyan-500 px-8 py-4 font-semibold text-slate-950 shadow-lg shadow-cyan-500/10 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
-        >
-          {loading ? "Analyzing Water Risk..." : "Analyze Water Risk"}
-        </button>
-
-        {/* Results */}
-        {riskData && (
-          <section>
-
-            {/* Main Risk Banner */}
-            <div className="mb-8 rounded-2xl border border-slate-800 bg-slate-900 p-6 md:p-8">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Risk Status
-              </p>
-
-              <h2
-                className={`text-3xl font-black ${
-                  riskData.risk_level === "HIGH"
-                    ? "text-red-400"
-                    : riskData.risk_level === "WATCH"
-                    ? "text-orange-400"
-                    : "text-emerald-400"
-                }`}
-              >
-                {riskData.risk_level}
-              </h2>
-
-              <p className="mt-2 text-lg text-white">
-                {riskData.water_runway_days !== null
-                  ? `${riskData.water_runway_days} days of water runway`
-                  : "Water runway cannot be calculated"}
-              </p>
-
-              {riskData.risk_reason && (
-                <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Why this risk?
-                  </p>
-
-                  <p className="mt-1 text-sm leading-6 text-slate-300">
-                    {riskData.risk_reason}
-                  </p>
-                </div>
-              )}
-
-              <div className="mt-4 border-t border-slate-800/80 pt-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Recommendation
-                </p>
-
-                <p className="mt-1 font-medium text-slate-200">
-                  {riskData.recommendation}
-                </p>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="text-2xl font-bold">
-                Detailed Metrics
-              </h3>
-
-              <p className="mt-2 text-slate-400">
-                Detailed metrics generated from your water, consumption,
-                and weather data.
-              </p>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-
-              {/* Available Water */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-                <p className="text-sm text-slate-400">
-                  Available Water
-                </p>
-
-                <p className="mt-2 text-3xl font-bold">
-                  {riskData.available_water_liters.toLocaleString()} L
-                </p>
-              </div>
-
-              {/* Runway */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-                <p className="text-sm text-slate-400">
-                  Water Runway
-                </p>
-
-                <p className="mt-2 text-3xl font-bold">
-                  {riskData.water_runway_days !== null
-                    ? `${riskData.water_runway_days} days`
-                    : "N/A"}
-                </p>
-              </div>
-
-              {/* Risk */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-                <p className="text-sm text-slate-400">
-                  Risk Level
-                </p>
-
-                <p
-                  className={`mt-2 text-3xl font-bold ${
-                    riskData.risk_level === "LOW"
-                      ? "text-green-400"
-                      : riskData.risk_level === "WATCH"
-                      ? "text-yellow-400"
-                      : "text-red-400"
-                  }`}
-                >
-                  {riskData.risk_level}
-                </p>
-              </div>
-
-              {/* Temperature */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-                <p className="text-sm text-slate-400">
-                  Max Temperature
-                </p>
-
-                <p className="mt-2 text-3xl font-bold">
-                  {riskData.max_temperature_c}°C
-                </p>
-              </div>
-
-            </div>
-
-            {/* Consumption Chart */}
-            <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-6">
-              <h4 className="mb-2 text-lg font-semibold">
-                7-Day Water Consumption
-              </h4>
-
-              <p className="mb-6 text-sm text-slate-400">
-                Daily water usage based on your recent consumption history.
-              </p>
-
-              <div className="h-80 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={(riskData.consumption_history || []).map((value, index) => ({
-                      day: `Day ${index + 1}`,
-                      consumption: value,
-                    }))}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-
-                    <XAxis
-                      dataKey="day"
-                      stroke="#94a3b8"
-                    />
-
-                    <YAxis
-                      stroke="#94a3b8"
-                    />
-
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#0f172a",
-                        border: "1px solid #334155",
-                        borderRadius: "12px",
-                        color: "#ffffff",
-                      }}
-                    />
-
-                    <Line
-                      type="monotone"
-                      dataKey="consumption"
-                      stroke="#22d3ee"
-                      strokeWidth={3}
-                      dot={{ r: 5 }}
-                      activeDot={{ r: 7 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Water Supply Status */}
-            <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-6">
-
-              <div className="mb-6">
-                <h4 className="text-lg font-semibold">
-                  Water Supply Status
-                </h4>
-
-                <p className="mt-1 text-sm text-slate-400">
-                  Current tank availability based on your input.
-                </p>
-              </div>
-
-              <div className="grid gap-8 md:grid-cols-2">
-
-                {/* Tank Level */}
-                <div>
-
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-sm text-slate-400">
-                      Tank Level
-                    </span>
-
-                    <span className="font-semibold">
-                      {formData.tank_level_percent}%
-                    </span>
-                  </div>
-
-                  <div className="h-6 overflow-hidden rounded-full bg-slate-800">
-
-                    <div
-                      className="h-full rounded-full bg-cyan-400 transition-all duration-700"
-                      style={{
-                        width: `${formData.tank_level_percent}%`,
-                      }}
-                    />
-
-                  </div>
-
-                  <div className="mt-3 flex justify-between text-sm text-slate-400">
-                    <span>
-                      {riskData.available_water_liters.toLocaleString()} L available
-                    </span>
-
-                    <span>
-                      {formData.tank_capacity_liters.toLocaleString()} L capacity
-                    </span>
-                  </div>
-
-                </div>
-
-                {/* Runway */}
-                <div>
-
-                  <p className="text-sm text-slate-400">
-                    Estimated Water Runway
-                  </p>
-
-                  <div className="mt-2 flex items-baseline gap-2">
-                    <span className="text-4xl font-bold">
-                      {riskData.water_runway_days !== null
-                        ? riskData.water_runway_days
-                        : "N/A"}
-                    </span>
-
-                    {riskData.water_runway_days !== null && (
-                      <span className="text-slate-400">
-                        days
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="mt-3 text-sm text-slate-400">
-                    Based on current consumption and projected demand.
-                  </p>
-
-                </div>
-
-              </div>
-
-            </div>
-
-            {/* Weather Intelligence */}
-            <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-6">
-
-              <div className="mb-6">
-                <h4 className="text-lg font-semibold">
-                  Weather & Heat Intelligence
-                </h4>
-
-                <p className="mt-1 text-sm text-slate-400">
-                  Upcoming temperatures that influence projected water demand.
-                </p>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-3">
-
-                {(riskData.weather_forecast || []).map((temperature, index) => (
-                  <div
-                    key={index}
-                    className="rounded-xl border border-slate-800 bg-slate-950 p-5"
-                  >
-                    <p className="text-sm text-slate-400">
-                      Day {index + 1}
-                    </p>
-
-                    <p className="mt-2 text-3xl font-bold">
-                      {temperature}°C
-                    </p>
-
-                    <p className="mt-2 text-sm text-slate-500">
-                      Maximum temperature
-                    </p>
-                  </div>
-                ))}
-
-              </div>
-
-              <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950 p-5">
-
-                <div className="flex items-center justify-between">
-
-                  <div>
-                    <p className="text-sm text-slate-400">
-                      Heat Adjustment
-                    </p>
-
-                    <p className="mt-1 text-2xl font-bold">
-                      {riskData.heat_adjustment_percent}%
-                    </p>
-
-                    {riskData.heat_status && (
-                      <p
-                        className={`mt-1 text-sm font-medium ${
-                          riskData.heat_status === "HIGH"
-                            ? "text-red-400"
-                            : riskData.heat_status === "ELEVATED"
-                            ? "text-orange-400"
-                            : riskData.heat_status === "MODERATE"
-                            ? "text-yellow-400"
-                            : "text-emerald-400"
-                        }`}
-                      >
-                        Status: {riskData.heat_status}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="text-right">
-                    <p className="text-sm text-slate-400">
-                      Heat Warning
-                    </p>
-
-                    <p
-                      className={`mt-1 font-semibold ${
-                        riskData.heat_warning
-                          ? "text-red-400"
-                          : "text-green-400"
-                      }`}
-                    >
-                      {riskData.heat_warning ? "ACTIVE" : "NONE"}
-                    </p>
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
-
-            {/* More Details */}
-            <div className="mt-6 grid gap-6 md:grid-cols-2">
-
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-
-                <h4 className="mb-4 text-lg font-semibold">
-                  Consumption Analysis
-                </h4>
-
-                <div className="space-y-3 text-sm">
-
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">
-                      Average daily consumption
-                    </span>
-
-                    <span>
-                      {riskData.average_daily_consumption_liters} L
-                    </span>
-                  </div>
-
-                  {riskData.consumption_trend && (
-                    <div>
-                      <p className="mt-2 text-sm text-slate-400">
-                        Consumption Trend
-                      </p>
-                      <p
-                        className={`text-lg font-semibold ${
-                          riskData.consumption_trend === "INCREASING"
-                            ? "text-red-400"
-                            : riskData.consumption_trend === "DECREASING"
-                            ? "text-emerald-400"
-                            : riskData.consumption_trend === "STABLE"
-                            ? "text-cyan-400"
-                            : "text-slate-400"
-                        }`}
-                      >
-                        {riskData.consumption_trend}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between pt-1">
-                    <span className="text-slate-400">
-                      Projected daily consumption
-                    </span>
-
-                    <span>
-                      {riskData.projected_daily_consumption_liters} L
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">
-                      Days analyzed
-                    </span>
-
-                    <span>
-                      {riskData.days_of_history}
-                    </span>
-                  </div>
-
-                </div>
-              </div>
-
-              {/* Recommendation & AI Advice */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-
-                <h4 className="mb-4 text-lg font-semibold">
-                  Recommendation
-                </h4>
-
-                <p className="text-slate-300">
-                  {riskData.recommendation}
-                </p>
-
-                {riskData.risk_reason && (
-                  <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      Why this risk?
-                    </p>
-
-                    <p className="mt-2 text-sm leading-6 text-slate-300">
-                      {riskData.risk_reason}
-                    </p>
-                  </div>
-                )}
-
-                <div className="mt-5 border-t border-slate-800 pt-5">
-
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/10 text-xl">
-                      🤖
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold">
-                        CURE AI
-                      </h4>
-
-                      <p className="text-xs text-slate-500">
-                        AI-powered water risk explanation
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
-                    <p className="whitespace-pre-line text-sm leading-7 text-slate-300">
-                      {riskData.ai_advice.replace(/\*\*/g, "")}
-                    </p>
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          </section>
-        )}
-
-        {/* Live System Status Bar */}
-        <div className="mt-6 flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
-
-            <span className="text-sm text-slate-300">
-              CURE Risk Engine
-            </span>
-
-            <span className="text-xs text-emerald-400">
-              ONLINE
-            </span>
-          </div>
-
-          <span className="text-xs text-slate-500">
-            Weather + Consumption + Risk Analysis
-          </span>
-        </div>
-
-        {/* How CURE Decides */}
-        <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-          <h2 className="text-xl font-bold text-white">
-            How CURE Decides
-          </h2>
-
-          <p className="mt-2 text-sm text-slate-400">
-            CURE combines current water availability, recent consumption,
-            and upcoming heat conditions to estimate water runway and risk.
-          </p>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-4">
-            <div className="rounded-xl bg-slate-950 p-4">
-              <p className="text-sm font-semibold text-cyan-400">
-                01 · Water
-              </p>
-              <p className="mt-2 text-sm text-slate-400">
-                Calculates available water from tank capacity and current level.
-              </p>
-            </div>
-
-            <div className="rounded-xl bg-slate-950 p-4">
-              <p className="text-sm font-semibold text-cyan-400">
-                02 · Consumption
-              </p>
-              <p className="mt-2 text-sm text-slate-400">
-                Analyzes recent usage and identifies the consumption trend.
-              </p>
-            </div>
-
-            <div className="rounded-xl bg-slate-950 p-4">
-              <p className="text-sm font-semibold text-cyan-400">
-                03 · Climate
-              </p>
-              <p className="mt-2 text-sm text-slate-400">
-                Uses weather conditions to adjust projected water demand.
-              </p>
-            </div>
-
-            <div className="rounded-xl bg-slate-950 p-4">
-              <p className="text-sm font-semibold text-cyan-400">
-                04 · Risk
-              </p>
-              <p className="mt-2 text-sm text-slate-400">
-                Estimates water runway and produces an actionable risk level.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <footer className="mt-16 border-t border-slate-800 pt-6 text-center">
-          <p className="text-sm text-slate-500">
-            CURE — Climate & Utility Risk Engine
-          </p>
-
-          <p className="mt-1 text-xs text-slate-600">
-            Turning climate and consumption data into actionable water-risk insights.
-          </p>
-        </footer>
-
-      </main>
+    <div
+      className={`rounded-xl border bg-[#080e1c] p-4 ${
+        tones[tone] || tones.cyan
+      }`}
+    >
+      <p className="text-xs font-medium uppercase tracking-widest text-slate-400">
+        {label}
+      </p>
+      <p className="mt-3 break-words text-2xl font-semibold text-white">
+        {value}
+      </p>
+      {detail && <p className="mt-1 text-xs text-slate-500">{detail}</p>}
     </div>
   );
 }
 
-export default App;
+function RiskBadge({ level }) {
+  const value = String(level || "NOT RUN").toUpperCase();
+
+  const color = ["HIGH", "CRITICAL"].includes(value)
+    ? "border-rose-400/30 bg-rose-400/10 text-rose-200"
+    : ["WATCH", "MEDIUM"].includes(value)
+      ? "border-amber-400/30 bg-amber-400/10 text-amber-200"
+      : value === "LOW"
+        ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
+        : "border-slate-600 bg-slate-800 text-slate-300";
+
+  return (
+    <span
+      className={`rounded-full border px-3 py-1.5 text-xs font-bold tracking-wide ${color}`}
+    >
+      {value}
+    </span>
+  );
+}
+
+export default function App() {
+  const [formData, setFormData] = useState(INITIAL_FORM);
+  const [riskData, setRiskData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  const chartData = useMemo(() => {
+    const values = Array.isArray(riskData?.consumption_history)
+      ? riskData.consumption_history
+      : formData.consumption_history;
+
+    return values.map((value, index) => ({
+      day: `Day ${index + 1}`,
+      consumption: Number(value) || 0,
+    }));
+  }, [riskData, formData.consumption_history]);
+
+  const updateField = (field, value) => {
+    setFormData((old) => ({
+      ...old,
+      [field]: value === "" ? "" : Number(value),
+    }));
+  };
+
+  const updateConsumption = (index, value) => {
+    setFormData((old) => {
+      const history = [...old.consumption_history];
+      history[index] = value === "" ? "" : Number(value);
+
+      return { ...old, consumption_history: history };
+    });
+  };
+
+  async function analyzeRisk(event) {
+    event?.preventDefault();
+    setErrorMsg("");
+
+    if (!(Number(formData.tank_capacity_liters) > 0)) {
+      setErrorMsg("Tank capacity must be greater than zero.");
+      return;
+    }
+
+    if (
+      Number(formData.tank_level_percent) < 0 ||
+      Number(formData.tank_level_percent) > 100
+    ) {
+      setErrorMsg("Tank level must be between 0 and 100%.");
+      return;
+    }
+
+    if (
+      formData.consumption_history.some(
+        (value) =>
+          value === "" ||
+          !Number.isFinite(Number(value)) ||
+          Number(value) < 0
+      )
+    ) {
+      setErrorMsg(
+        "Enter a valid non-negative value for every consumption day."
+      );
+      return;
+    }
+
+    if (
+      !Number.isFinite(Number(formData.latitude)) ||
+      Number(formData.latitude) < -90 ||
+      Number(formData.latitude) > 90 ||
+      !Number.isFinite(Number(formData.longitude)) ||
+      Number(formData.longitude) < -180 ||
+      Number(formData.longitude) > 180
+    ) {
+      setErrorMsg("Enter valid latitude and longitude coordinates.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const payload = {
+        ...formData,
+        tank_capacity_liters: Number(formData.tank_capacity_liters),
+        tank_level_percent: Number(formData.tank_level_percent),
+        latitude: Number(formData.latitude),
+        longitude: Number(formData.longitude),
+        consumption_history: formData.consumption_history.map(Number),
+      };
+
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const raw = await response.text();
+      let data;
+
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        throw new Error(
+          "The backend returned an unreadable response. Check its terminal logs."
+        );
+      }
+
+      if (!response.ok) {
+        const detail = data?.detail;
+
+        throw new Error(
+          typeof detail === "string"
+            ? detail
+            : Array.isArray(detail)
+              ? detail.map((item) => item.msg).join(", ")
+              : `Request failed with HTTP ${response.status}.`
+        );
+      }
+
+      setRiskData(data);
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error("CURE risk analysis failed:", error);
+
+      setErrorMsg(
+        error instanceof TypeError
+          ? "Could not reach the backend. Confirm Uvicorn is running at 127.0.0.1:8000 and CORS is configured."
+          : error.message || "Risk analysis failed."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const level = riskData?.risk_level;
+  const runway = riskData?.water_runway_days;
+
+  const waterAvailable =
+    (Number(formData.tank_capacity_liters) *
+      Number(formData.tank_level_percent)) /
+    100;
+
+  const tone =
+    level === "HIGH" ? "red" : level === "WATCH" ? "amber" : "cyan";
+
+  return (
+    <div className="min-h-screen bg-[#050914] text-slate-100">
+      {/* Background lighting */}
+      <div
+        className="pointer-events-none fixed inset-0 overflow-hidden"
+        aria-hidden="true"
+      >
+        <div className="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="absolute -right-40 top-1/3 h-96 w-96 rounded-full bg-blue-600/10 blur-3xl" />
+      </div>
+
+      {/* Header */}
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#050914]/90 backdrop-blur-xl">
+        <div className="relative mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-300 to-blue-500 text-xl text-slate-950">
+              💧
+            </div>
+
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl font-bold tracking-tight text-white">
+                  CURE
+                </h1>
+
+                <span className="rounded-md border border-cyan-400/20 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-200">
+                  Risk Engine
+                </span>
+              </div>
+
+              <p className="text-xs text-slate-400">
+                Climate & Utility Risk Engine
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-slate-300">
+            <span
+              className={`h-2 w-2 rounded-full ${
+                loading
+                  ? "animate-pulse bg-amber-300"
+                  : riskData
+                    ? "bg-emerald-400"
+                    : "bg-slate-500"
+              }`}
+            />
+            {loading
+              ? "Analyzing"
+              : riskData
+                ? "Analysis complete"
+                : "Ready to analyze"}
+          </div>
+        </div>
+      </header>
+
+      <main className="relative mx-auto max-w-[1500px] px-4 py-7 sm:px-6 lg:px-8">
+        {/* Intro */}
+        <div className="mb-7 grid gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:items-end">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+              Water Intelligence / Operations Overview
+            </p>
+
+            <h2 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
+              Make every drop
+              <span className="block bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
+                count with confidence.
+              </span>
+            </h2>
+
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
+              Assess water availability using tank capacity, recent
+              consumption, and location. Results come from your CURE backend.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+              Last Analysis
+            </p>
+
+            <p className="mt-2 text-sm font-medium text-white">
+              {lastUpdated
+                ? lastUpdated.toLocaleString()
+                : "No analysis run yet"}
+            </p>
+
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              Weather details appear only when provided by your API response.
+            </p>
+          </div>
+        </div>
+
+        {/* Error message */}
+        {errorMsg && (
+          <div
+            role="alert"
+            className="mb-6 flex items-start justify-between gap-4 rounded-xl border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-100"
+          >
+            <div>
+              <p className="font-semibold">
+                Analysis could not be completed
+              </p>
+              <p className="mt-1 text-rose-100/80">{errorMsg}</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setErrorMsg("")}
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              aria-label="Dismiss error"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        <div className="grid gap-5 xl:grid-cols-[350px_minmax(0,1fr)]">
+          {/* Input panel */}
+          <form
+            onSubmit={analyzeRisk}
+            className="h-fit rounded-2xl border border-white/10 bg-slate-900/65 p-5 shadow-xl shadow-black/10"
+          >
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-300">
+              Inputs
+            </p>
+
+            <h2 className="mt-1 text-lg font-semibold text-white">
+              Water System Parameters
+            </h2>
+
+            <p className="mt-1 text-sm leading-6 text-slate-400">
+              Adjust the values, then run an assessment.
+            </p>
+
+            <div className="mt-5 space-y-4">
+              <label className="block">
+                <span className="mb-2 block text-sm text-slate-300">
+                  Tank capacity (liters)
+                </span>
+
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={formData.tank_capacity_liters}
+                  onChange={(e) =>
+                    updateField("tank_capacity_liters", e.target.value)
+                  }
+                  className="w-full rounded-xl border border-white/10 bg-[#080e1c] px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-300/60 focus:ring-2 focus:ring-cyan-300/10"
+                />
+              </label>
+
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <label htmlFor="tank-level" className="text-sm text-slate-300">
+                    Current tank level
+                  </label>
+
+                  <span className="text-sm font-semibold text-cyan-200">
+                    {formData.tank_level_percent}%
+                  </span>
+                </div>
+
+                <input
+                  id="tank-level"
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={formData.tank_level_percent}
+                  onChange={(e) =>
+                    updateField("tank_level_percent", e.target.value)
+                  }
+                  className="w-full accent-cyan-300"
+                />
+
+                <div className="mt-1 flex justify-between text-[11px] text-slate-500">
+                  <span>Empty</span>
+                  <span>Full</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="mb-2 block text-sm text-slate-300">
+                    Latitude
+                  </span>
+
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    value={formData.latitude}
+                    onChange={(e) => updateField("latitude", e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-[#080e1c] px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-300/60"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-sm text-slate-300">
+                    Longitude
+                  </span>
+
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    value={formData.longitude}
+                    onChange={(e) => updateField("longitude", e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-[#080e1c] px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-300/60"
+                  />
+                </label>
+              </div>
+
+              <div className="border-t border-white/10 pt-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-white">
+                    Consumption History
+                  </p>
+                  <span className="text-xs text-slate-500">L / day</span>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  {formData.consumption_history.map((value, index) => (
+                    <label key={index} className="block">
+                      <span className="mb-1.5 block text-xs text-slate-400">
+                        Day {index + 1}
+                      </span>
+
+                      <input
+                        type="number"
+                        min="0"
+                        required
+                        value={value}
+                        onChange={(e) =>
+                          updateConsumption(index, e.target.value)
+                        }
+                        className="w-full rounded-lg border border-white/10 bg-[#080e1c] px-3 py-2 text-sm text-white outline-none focus:border-cyan-300/60"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-cyan-300/15 bg-cyan-300/[0.05] p-3">
+                <p className="text-xs text-slate-400">
+                  Estimated water currently in tank
+                </p>
+
+                <p className="mt-1 text-lg font-semibold text-white">
+                  {formatNumber(waterAvailable, 0)} L
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-300 to-blue-400 px-4 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-500/10 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-900/30 border-t-slate-900" />
+                    Analyzing…
+                  </>
+                ) : (
+                  <>
+                    Run Risk Analysis <span>→</span>
+                  </>
+                )}
+              </button>
+
+              <p className="text-center text-[11px] text-slate-500">
+                POST <code className="text-slate-400">/water/risk</code>
+              </p>
+            </div>
+          </form>
+
+          {/* Results */}
+          <div className="min-w-0 space-y-5">
+            <Panel
+              title="Water Security Snapshot"
+              subtitle="Key metrics returned by your risk engine."
+            >
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-widest text-slate-500">
+                  Risk Classification
+                </p>
+                <RiskBadge level={level} />
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+                <Metric
+                  label="Water runway"
+                  value={runway == null ? "—" : `${formatNumber(runway, 2)} days`}
+                  detail="Estimated days remaining"
+                  tone={tone}
+                />
+
+                <Metric
+                  label="Available water"
+                  value={`${formatNumber(waterAvailable, 0)} L`}
+                  detail={`${formData.tank_level_percent}% of tank capacity`}
+                  tone="green"
+                />
+
+                <Metric
+                  label="Heat adjustment"
+                  value={
+                    riskData?.heat_adjustment_percent == null
+                      ? "—"
+                      : `${formatNumber(riskData.heat_adjustment_percent)}%`
+                  }
+                  detail="Backend-reported adjustment"
+                  tone="amber"
+                />
+
+                <Metric
+                  label="Risk status"
+                  value={level || "Pending"}
+                  detail="Classification from API"
+                  tone={tone}
+                />
+              </div>
+
+              {!riskData && (
+                <p className="mt-4 rounded-xl border border-dashed border-white/15 bg-white/[0.02] p-4 text-sm leading-6 text-slate-400">
+                  Run an analysis to populate these cards with backend results.
+                </p>
+              )}
+
+              {loading && (
+                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-800">
+                  <div className="h-full w-1/2 animate-pulse rounded-full bg-cyan-300" />
+                </div>
+              )}
+            </Panel>
+
+            {/* Consumption chart */}
+            <Panel
+              title="Consumption History"
+              subtitle="Daily values used for this assessment."
+            >
+              <div className="mt-4 h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={chartData}
+                    margin={{ top: 8, right: 8, left: -18, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient
+                        id="consumptionFill"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="0%"
+                          stopColor="#67e8f9"
+                          stopOpacity={0.32}
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor="#67e8f9"
+                          stopOpacity={0.01}
+                        />
+                      </linearGradient>
+                    </defs>
+
+                    <CartesianGrid
+                      stroke="#1e293b"
+                      strokeDasharray="3 3"
+                      vertical={false}
+                    />
+
+                    <XAxis
+                      dataKey="day"
+                      tick={{ fill: "#94a3b8", fontSize: 11 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+
+                    <YAxis
+                      tick={{ fill: "#94a3b8", fontSize: 11 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+
+                    <Tooltip
+                      contentStyle={{
+                        background: "#0b1222",
+                        border: "1px solid #263449",
+                        borderRadius: 12,
+                        color: "#e2e8f0",
+                      }}
+                      labelStyle={{ color: "#a5f3fc" }}
+                      formatter={(value) => [
+                        `${formatNumber(value, 0)} L`,
+                        "Consumption",
+                      ]}
+                    />
+
+                    <Area
+                      type="monotone"
+                      dataKey="consumption"
+                      stroke="#67e8f9"
+                      strokeWidth={2.5}
+                      fill="url(#consumptionFill)"
+                      activeDot={{ r: 5 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </Panel>
+
+            {/* AI guidance and context */}
+            <div className="grid gap-5 md:grid-cols-2">
+              <Panel
+                title="AI Operational Guidance"
+                subtitle="Advice generated by your backend."
+              >
+                {riskData?.ai_advice ? (
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-300">
+                    {String(riskData.ai_advice).replace(/\*\*/g, "")}
+                  </p>
+                ) : (
+                  <p className="mt-3 text-sm leading-6 text-slate-400">
+                    AI guidance will appear here after a successful analysis.
+                  </p>
+                )}
+              </Panel>
+
+              <Panel
+                title="Assessment Context"
+                subtitle="Parameters used in this request."
+              >
+                <dl className="mt-3 space-y-3 text-sm">
+                  <div className="flex justify-between gap-4 border-b border-white/5 pb-3">
+                    <dt className="text-slate-400">Coordinates</dt>
+                    <dd className="text-right font-mono text-slate-200">
+                      {formatNumber(formData.latitude, 3)},{" "}
+                      {formatNumber(formData.longitude, 3)}
+                    </dd>
+                  </div>
+
+                  <div className="flex justify-between gap-4 border-b border-white/5 pb-3">
+                    <dt className="text-slate-400">Tank capacity</dt>
+                    <dd className="text-right text-slate-200">
+                      {formatNumber(formData.tank_capacity_liters, 0)} L
+                    </dd>
+                  </div>
+
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-slate-400">Endpoint</dt>
+                    <dd className="text-right font-mono text-xs text-cyan-200">
+                      POST /water/risk
+                    </dd>
+                  </div>
+                </dl>
+              </Panel>
+            </div>
+          </div>
+        </div>
+
+        <footer className="mt-8 flex flex-col gap-2 border-t border-white/10 py-5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            <span className="font-semibold text-slate-300">CURE</span> ·
+            Climate & Utility Risk Engine
+          </p>
+          <p>
+            Local development dashboard · Verify backend results before
+            operational use
+          </p>
+        </footer>
+      </main>
+    </div>
+  );
+}
