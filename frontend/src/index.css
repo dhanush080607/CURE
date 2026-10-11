@@ -30,6 +30,7 @@
   --warn: #f5c451;
   --bad: #f2777a;
   --info: #8ab4f8;
+  --diag-pressure: #ffffff;
 
   --map-filter: none;
   --shadow-pop: 0 24px 60px -24px rgba(0, 0, 0, 0.9);
@@ -58,6 +59,7 @@
   --warn: #a8740f;
   --bad: #c2413f;
   --info: #2f6fbd;
+  --diag-pressure: #6b7280;
 
   --shadow-pop: 0 24px 60px -28px rgba(40, 34, 24, 0.35);
   color-scheme: light;
@@ -405,4 +407,3 @@ body {
 .maplibregl-ctrl-attrib a {
   color: var(--ink-3) !important;
 }
-
