@@ -10,6 +10,7 @@ def calculate_water_risk(
     consumption_history: list[float],
     max_temperature_c: float,
     heat_warning: bool,
+    forecast_temperatures_c: list[float] | None = None,
 ):
     # 1. Calculate current available water
     available_water = (
@@ -31,6 +32,7 @@ def calculate_water_risk(
     demand_prediction = predict_water_demand(
         consumption_history=consumption_history,
         forecast_days=7,
+        forecast_temperatures_c=forecast_temperatures_c,
     )
 
     predicted_daily_demand = (

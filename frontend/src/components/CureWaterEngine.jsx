@@ -323,7 +323,9 @@ export default function CureWaterEngine() {
           {loading ? "Running analysis…" : "Run risk analysis"}
         </button>
         <span className="text-[11px]" style={{ color: "var(--ink-3)" }}>
-          {api.base === "local browser calculation" ? (
+          {result?.analysis_source === "browser" ? (
+            <>Backend unavailable; showing a local calculation without live weather adjustment.</>
+          ) : api.base === "local browser calculation" ? (
             <>
               Runs locally; history is saved in this browser. Live weather requires a configured backend.
             </>
@@ -434,7 +436,10 @@ export default function CureWaterEngine() {
                   : "n/a",
               ],
               ["Runway", result.water_runway_days != null ? `${result.water_runway_days} d` : "n/a"],
-              ["Max temp", `${result.max_temperature_c} °C`],
+              [
+                "Max temp",
+                result.max_temperature_c == null ? "Unavailable" : `${result.max_temperature_c} °C`,
+              ],
               ["Heat adj", `${result.heat_adjustment_percent}%`],
               ["Trend", result.consumption_trend],
               ["Days", `${result.days_of_history}`],

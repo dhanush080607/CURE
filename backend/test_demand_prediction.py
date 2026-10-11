@@ -47,6 +47,19 @@ def test_empty_history_reports_insufficient_data():
     assert result["prediction_status"] == "INSUFFICIENT_DATA"
     assert result["predicted_daily_demand_liters"] is None
     assert result["daily_predictions"] == []
+    assert result["method"] == "weighted_average"
+
+
+def test_forecast_temperatures_adjust_each_day_demand():
+    result = predict_water_demand(
+        [1000, 1000],
+        forecast_days=2,
+        forecast_temperatures_c=[30, 35],
+    )
+
+    assert result["daily_predictions"][0]["predicted_demand_liters"] == 1000
+    assert result["daily_predictions"][1]["predicted_demand_liters"] == 1100
+    assert result["daily_predictions"][1]["heat_adjustment_percent"] == 10
 
 
 def test_rejects_invalid_forecast_days():
@@ -64,6 +77,24 @@ def test_rejects_negative_consumption():
     except ValueError:
         return
     raise AssertionError("negative consumption should raise ValueError")
+
+
+def test_rejects_non_finite_consumption_and_temperature():
+    for history, temperatures in (
+        ([1000, float("nan")], None),
+        ([1000, float("inf")], None),
+        ([1000], [float("nan")]),
+        ([1000], [float("inf")]),
+    ):
+        try:
+            predict_water_demand(
+                history,
+                forecast_days=1,
+                forecast_temperatures_c=temperatures,
+            )
+        except ValueError:
+            continue
+        raise AssertionError("non-finite values should raise ValueError")
 
 
 if __name__ == "__main__":

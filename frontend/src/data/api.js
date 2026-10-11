@@ -33,14 +33,37 @@ function localWaterHistory(limit = 8) {
 }
 
 function localWaterRisk(payload) {
-  const history = payload.consumption_history.map(Number);
+  const capacity = Number(payload?.tank_capacity_liters);
+  const level = Number(payload?.tank_level_percent);
+  const latitude = Number(payload?.latitude);
+  const longitude = Number(payload?.longitude);
+  const history = Array.isArray(payload?.consumption_history)
+    ? payload.consumption_history.map(Number)
+    : [];
+
+  if (!Number.isFinite(capacity) || capacity <= 0) {
+    throw new Error("Tank capacity must be greater than zero.");
+  }
+  if (!Number.isFinite(level) || level < 0 || level > 100) {
+    throw new Error("Tank level must be between 0 and 100 percent.");
+  }
+  if (!history.length || history.some((value) => !Number.isFinite(value) || value < 0)) {
+    throw new Error("Enter at least one valid, non-negative consumption value.");
+  }
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
+    throw new Error("Latitude must be between -90 and 90.");
+  }
+  if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+    throw new Error("Longitude must be between -180 and 180.");
+  }
+
   const average = history.reduce((sum, value) => sum + value, 0) / history.length;
   const recent = history.slice(-7);
   const weights = recent.map((_, index) => index + 1);
   const weightedDemand =
     recent.reduce((sum, value, index) => sum + value * weights[index], 0) /
     weights.reduce((sum, weight) => sum + weight, 0);
-  const available = (payload.tank_capacity_liters * payload.tank_level_percent) / 100;
+  const available = (capacity * level) / 100;
   const trendDifference = history.at(-1) - history[0];
   const trend =
     average === 0
@@ -50,7 +73,6 @@ function localWaterRisk(payload) {
         : trendDifference < -average * 0.05
           ? "DECREASING"
           : "STABLE";
-  const maxTemperature = 30;
   const heatAdjustment = 0;
   const dailyDemand = weightedDemand * (1 + heatAdjustment / 100);
   const runway = dailyDemand > 0 ? available / dailyDemand : null;
@@ -86,8 +108,8 @@ function localWaterRisk(payload) {
     })),
     demand_prediction_status: "SUCCESS",
     days_of_history: history.length,
-    max_temperature_c: maxTemperature,
-    heat_warning: false,
+    max_temperature_c: null,
+    heat_warning: null,
     heat_adjustment_percent: heatAdjustment,
     water_runway_days: runway == null ? null : Math.round(runway * 100) / 100,
     risk_level: riskLevel,
@@ -95,7 +117,7 @@ function localWaterRisk(payload) {
     recommendation,
     consumption_history: history,
     weather_source: "not-used-local-analysis",
-    max_temperature_window_c: maxTemperature,
+    max_temperature_window_c: null,
     history_id: null,
     ai_advice: `Local calculation: ${riskReason}`,
     ai_backend: "deterministic",
@@ -105,16 +127,22 @@ function localWaterRisk(payload) {
   const previous = readLocalHistory();
   saveLocalHistory([
     {
-      id: crypto.randomUUID(),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       created_at: new Date().toISOString(),
       available_water_liters: result.available_water_liters,
-      tank_level_percent: payload.tank_level_percent,
+      tank_level_percent: level,
       water_runway_days: result.water_runway_days,
       risk_level: result.risk_level,
     },
     ...previous,
   ]);
   return result;
+}
+
+function canFallBackToLocal(error) {
+  if (CONFIGURED_API_BASE) return false;
+  if (error instanceof TypeError) return true;
+  return error instanceof ApiError && [404, 500, 502, 503, 504].includes(error.status);
 }
 
 export class ApiError extends Error {
@@ -199,11 +227,17 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
       timeout: 20000,
+    }).catch((error) => {
+      if (!canFallBackToLocal(error)) throw error;
+      return localWaterRisk(payload);
     });
   },
 
   waterHistory(limit = 8) {
     if (!USE_BACKEND) return Promise.resolve(localWaterHistory(limit));
-    return request(`/water/history?limit=${encodeURIComponent(limit)}`);
+    return request(`/water/history?limit=${encodeURIComponent(limit)}`).catch((error) => {
+      if (!canFallBackToLocal(error)) throw error;
+      return localWaterHistory(limit);
+    });
   },
 };

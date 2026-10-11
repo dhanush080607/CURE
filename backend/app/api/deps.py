@@ -30,9 +30,9 @@ async def require_api_key(key: str | None = Security(_api_key_header)) -> None:
 
 # path -> (max requests, window seconds)
 _LIMITS: dict[str, tuple[int, float]] = {
-    # The picker debounces, but a fast typist still produces a burst, so this is
-    # generous enough to stay invisible while still capping abuse.
-    "/weather/search": (60, 60.0),
+    # The picker debounces, but a fast typist still produces a burst. Keep the
+    # limit high enough for normal use while bounding upstream geocoding calls.
+    "/weather/search": (40, 60.0),
     "/water/risk": (20, 60.0),
     "/water/history": (60, 60.0),
     "/ai/ask": (20, 60.0),

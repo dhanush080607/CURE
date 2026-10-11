@@ -59,6 +59,11 @@ async def water_risk(data: WaterRiskRequest):
 
     max_temperature = max(temperatures) if temperatures else 0.0
     heat_warning = max_temperature >= 38
+    forecast_temperatures = [
+        day["max"]
+        for day in weather.get("daily", [])
+        if isinstance(day.get("max"), (int, float))
+    ]
 
     risk = calculate_water_risk(
         tank_capacity_liters=data.tank_capacity_liters,
@@ -66,6 +71,7 @@ async def water_risk(data: WaterRiskRequest):
         consumption_history=data.consumption_history,
         max_temperature_c=max_temperature,
         heat_warning=heat_warning,
+        forecast_temperatures_c=forecast_temperatures,
     )
 
     explanation = await agent.explain(risk)

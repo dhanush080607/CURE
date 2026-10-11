@@ -5,6 +5,21 @@ const AIR = "https://air-quality-api.open-meteo.com/v1/air-quality";
 const GEOCODING = "https://geocoding-api.open-meteo.com/v1/search";
 const REVERSE = "https://api-bdc.io/data/reverse-geocode-client";
 const WTTR = "https://wttr.in";
+const OFFLINE_PLACES = [
+  { name: "Chittoor", lat: 13.2172, lon: 79.1003, admin1: "Andhra Pradesh", country: "India" },
+  { name: "Madanapalle", lat: 13.5503, lon: 78.5029, admin1: "Andhra Pradesh", country: "India" },
+  { name: "Tirupati", lat: 13.6288, lon: 79.4192, admin1: "Andhra Pradesh", country: "India" },
+  { name: "Kadapa", lat: 14.4674, lon: 78.8241, admin1: "Andhra Pradesh", country: "India" },
+  { name: "Kurnool", lat: 15.8281, lon: 78.0373, admin1: "Andhra Pradesh", country: "India" },
+  { name: "Vijayawada", lat: 16.5062, lon: 80.648, admin1: "Andhra Pradesh", country: "India" },
+  { name: "Visakhapatnam", lat: 17.6868, lon: 83.2185, admin1: "Andhra Pradesh", country: "India" },
+  { name: "Hyderabad", lat: 17.385, lon: 78.4867, admin1: "Telangana", country: "India" },
+  { name: "Warangal", lat: 17.9689, lon: 79.5941, admin1: "Telangana", country: "India" },
+  { name: "Bengaluru", lat: 12.9716, lon: 77.5946, admin1: "Karnataka", country: "India" },
+  { name: "Chennai", lat: 13.0827, lon: 80.2707, admin1: "Tamil Nadu", country: "India" },
+  { name: "Mumbai", lat: 19.076, lon: 72.8777, admin1: "Maharashtra", country: "India" },
+  { name: "New Delhi", lat: 28.6139, lon: 77.209, admin1: "Delhi", country: "India" },
+];
 
 export const CARDINALS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
 
@@ -33,27 +48,64 @@ export async function searchPlaces(query) {
   const q = query.trim();
   if (q.length < 2) return [];
 
+  let backendError;
   try {
     const results = await api.search(q, 8);
-    if (Array.isArray(results) && results.length) return results;
-  } catch {
-    /* backend offline - fall through to direct upstream call */
+    if (
+      Array.isArray(results) &&
+      results.length &&
+      !results.every(
+        (place) =>
+          String(place?.id || "").startsWith("offline:") ||
+          place?.admin1 === "Offline fallback"
+      )
+    ) {
+      return results;
+    }
+  } catch (error) {
+    backendError = error;
   }
 
-  const data = await getJson(
-    `${GEOCODING}?name=${encodeURIComponent(q)}&count=8&language=en&format=json`
-  );
-  return (data.results ?? []).map((r) => ({
-    id: `${r.latitude},${r.longitude}`,
-    name: r.name,
-    lat: r.latitude,
-    lon: r.longitude,
-    country: r.country ?? "",
-    countryCode: r.country_code ?? "",
-    admin1: r.admin1 ?? "",
-    timezone: r.timezone ?? "",
-    elevation: r.elevation ?? null,
-  }));
+  try {
+    const data = await getJson(
+      `${GEOCODING}?name=${encodeURIComponent(q)}&count=8&language=en&format=json`
+    );
+    return (data.results ?? []).map((r) => ({
+      id: `${r.latitude},${r.longitude}`,
+      name: r.name,
+      lat: r.latitude,
+      lon: r.longitude,
+      country: r.country ?? "",
+      countryCode: r.country_code ?? "",
+      admin1: r.admin1 ?? "",
+      timezone: r.timezone ?? "",
+      elevation: r.elevation ?? null,
+    }));
+  } catch (error) {
+    const normalizedQuery = q.toLocaleLowerCase();
+    const offlineMatches = OFFLINE_PLACES.filter((place) =>
+      `${place.name} ${place.admin1} ${place.country}`
+        .toLocaleLowerCase()
+        .includes(normalizedQuery)
+    )
+      .slice(0, 8)
+      .map((place) => ({
+        ...place,
+        id: `offline:${place.name.toLocaleLowerCase()}`,
+        countryCode: "IN",
+        timezone: "Asia/Kolkata",
+        elevation: null,
+        offline: true,
+      }));
+
+    if (offlineMatches.length) return offlineMatches;
+    throw new Error(
+      backendError
+        ? "Location search is unavailable. Check your connection or try a saved location."
+        : `No locations matched “${q}”.`,
+      { cause: error }
+    );
+  }
 }
 
 export async function reverseGeocode(lat, lon) {
@@ -310,4 +362,3 @@ export function timeOnly(iso) {
   const m = String(iso).match(/T(\d{2}:\d{2})/);
   return m ? m[1] : String(iso).slice(0, 5);
 }
-

@@ -32,6 +32,7 @@ function fmtCoord(value) {
 export default function LocationSearch({ onClose, onPick }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
+  const [searchError, setSearchError] = useState(null);
   const [recent, setRecent] = useState(readRecent);
   const inputRef = useRef(null);
   const debounced = useDebounced(query, 280);
@@ -55,10 +56,17 @@ export default function LocationSearch({ onClose, onPick }) {
     let alive = true;
     searchPlaces(dq)
       .then((r) => {
-        if (alive) setResults(r);
+        if (alive) {
+          setResults(r);
+          setSearchError(null);
+        }
       })
-      .catch(() => {
-        if (alive) setResults([]);
+      .catch((error) => {
+        if (!alive) return;
+        setResults([]);
+        setSearchError(
+          error instanceof Error ? error.message : "Location search is unavailable."
+        );
       });
     return () => {
       alive = false;
@@ -67,6 +75,7 @@ export default function LocationSearch({ onClose, onPick }) {
 
   const handleQuery = (value) => {
     setQuery(value);
+    setSearchError(null);
     if (value.trim().length < 2) setResults([]);
   };
 
@@ -199,7 +208,7 @@ export default function LocationSearch({ onClose, onPick }) {
 
         {debounced.trim().length >= 2 && !busy && results.length === 0 && (
           <p className="border-t px-4 py-6 text-center text-[12px]" style={{ borderColor: "var(--border)", color: "var(--ink-3)" }}>
-            No matches for &ldquo;{debounced.trim()}&rdquo;
+            {searchError || <>No matches for &ldquo;{debounced.trim()}&rdquo;</>}
           </p>
         )}
 

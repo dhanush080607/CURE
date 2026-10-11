@@ -1,4 +1,7 @@
 
+import math
+
+
 def predict_water_demand(
     consumption_history: list[float],
     forecast_days: int = 7,
@@ -12,7 +15,11 @@ def predict_water_demand(
     not a scientifically calibrated demand model.
     """
 
-    if forecast_days < 1:
+    if (
+        not isinstance(forecast_days, int)
+        or isinstance(forecast_days, bool)
+        or forecast_days < 1
+    ):
         raise ValueError("forecast_days must be at least 1")
 
     if not consumption_history:
@@ -21,14 +28,22 @@ def predict_water_demand(
             "predicted_daily_demand_liters": None,
             "forecast_days": forecast_days,
             "daily_predictions": [],
-            "method": "weather_adjusted_weighted_average",
+            "method": "weighted_average",
         }
 
-    if any(value < 0 for value in consumption_history):
-        raise ValueError("Consumption values cannot be negative")
+    if any(
+        not isinstance(value, (int, float))
+        or isinstance(value, bool)
+        or not math.isfinite(value)
+        or value < 0
+        for value in consumption_history
+    ):
+        raise ValueError("Consumption values must be finite, non-negative numbers")
 
     if forecast_temperatures_c is not None and any(
-        not isinstance(temp, (int, float)) or temp != temp
+        not isinstance(temp, (int, float))
+        or isinstance(temp, bool)
+        or not math.isfinite(temp)
         for temp in forecast_temperatures_c
     ):
         raise ValueError("Forecast temperatures must be valid numbers")

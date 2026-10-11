@@ -1,9 +1,12 @@
 """Live weather, air quality and geocoding from keyless public APIs."""
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from app.services.http_client import fetch_json
+
+log = logging.getLogger(__name__)
 
 FORECAST = "https://api.open-meteo.com/v1/forecast"
 AIR_QUALITY = "https://air-quality-api.open-meteo.com/v1/air-quality"
@@ -320,34 +323,6 @@ def _to_float(value):
         return None
 
 
-def _offline_search_results(query: str, count: int = 8) -> list[dict[str, Any]]:
-    """Fallback for an unreachable geocoder keeps the API responsive offline."""
-
-    text = (query or "").strip()
-    if not text:
-        return []
-
-    seed = sum(ord(ch) for ch in text.lower())
-    results = []
-    for offset in range(min(max(count, 1), 8)):
-        lat = round((((seed + offset * 61) % 18000) / 100.0) - 90, 4)
-        lon = round((((seed * 13 + offset * 97) % 36000) / 100.0) - 180, 4)
-        results.append(
-            {
-                "id": f"offline:{text.lower()}:{offset}",
-                "name": f"{text.title()} {offset + 1}".strip(),
-                "lat": lat,
-                "lon": lon,
-                "country": "Local",
-                "countryCode": "XX",
-                "admin1": "Offline fallback",
-                "timezone": "UTC",
-                "elevation": None,
-            }
-        )
-    return results
-
-
 async def search_places(query: str, count: int = 8) -> list[dict[str, Any]]:
     """Geocoding search used by the location picker."""
 
@@ -356,10 +331,14 @@ async def search_places(query: str, count: int = 8) -> list[dict[str, Any]]:
             GEOCODING,
             params={"name": query, "count": count, "language": "en", "format": "json"},
         )
-    except Exception:
-        return _offline_search_results(query, count)
+    except Exception as exc:
+        log.warning(
+            "Geocoding service unavailable; returning no backend results: %s",
+            type(exc).__name__,
+        )
+        return []
 
-    results = [
+    return [
         {
             "id": f"{r.get('latitude')},{r.get('longitude')}",
             "name": r.get("name"),
@@ -373,4 +352,3 @@ async def search_places(query: str, count: int = 8) -> list[dict[str, Any]]:
         }
         for r in (data.get("results") or [])
     ]
-    return results or _offline_search_results(query, count)
