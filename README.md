@@ -1,6 +1,6 @@
  <div align="center">
 
-<img src="./assets/cure-header.svg" width="100%" alt="CURE — Climate & Utility Risk Engine" />
+<img src="./assets/cure-risk-engine.svg" width="100%" alt="CURE — Climate & Utility Risk Engine" />
 
 # 🌿 CURE — Climate & Utility Risk Engine
 
