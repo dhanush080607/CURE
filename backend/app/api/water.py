@@ -37,7 +37,16 @@ class WaterRiskRequest(BaseModel):
 async def water_risk(data: WaterRiskRequest):
     """Deterministic water runway plus an optional AI explanation."""
 
-    weather = await get_weather(data.latitude, data.longitude)
+    
+    try:
+        weather = await get_weather(data.latitude, data.longitude)
+    except Exception:
+        log.exception("Weather lookup failed in /water/risk")
+        raise HTTPException(
+            status_code=503,
+            detail="Weather services are temporarily unavailable. Please try again.",
+        )
+
 
     temperatures = [
         t

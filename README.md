@@ -342,6 +342,16 @@ Frontend:
 http://localhost:5173
 ```
 
+### Production API behavior
+
+The frontend build does not assume that a backend exists on the frontend host.
+Without `VITE_API_BASE`, water-risk analysis runs in the browser and its history
+is saved only in that browser; live weather adjustments and shared history are
+not available in this mode. To use the full backend in production, set
+`VITE_API_BASE` to the deployed FastAPI base URL (for example,
+`https://api.example.com`) in the frontend deployment environment, allow the
+frontend origin in the backend CORS configuration, and redeploy the frontend.
+
 ---
 
 ## 📁 Project Structure

@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -10,11 +12,23 @@ from app.config import API_DESCRIPTION, API_TITLE, API_VERSION, CORS_ORIGINS
 from app.database import init_database
 from app.services import database
 from app.services.http_client import cache_stats
+from app.services.weather_service import get_weather
+
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    database.init_db()
+    init_database()
+    database.seed_if_empty()
+    yield
+
 
 app = FastAPI(
     title=API_TITLE,
     description=API_DESCRIPTION,
     version=API_VERSION,
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -37,7 +51,6 @@ app.include_router(
 )
 
 
-@app.on_event("startup")
 def on_startup() -> None:
     database.init_db()
     init_database()

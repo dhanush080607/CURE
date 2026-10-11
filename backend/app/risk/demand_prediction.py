@@ -1,10 +1,15 @@
+
 def predict_water_demand(
     consumption_history: list[float],
     forecast_days: int = 7,
+    forecast_temperatures_c: list[float] | None = None,
 ):
     """
-    Predict daily water demand using recent consumption history.
-    Uses a weighted average that gives more importance to recent usage.
+    Estimate daily water demand using recent consumption
+    and an optional temperature forecast.
+
+    The heat adjustment is an illustrative assumption,
+    not a scientifically calibrated demand model.
     """
 
     if forecast_days < 1:
@@ -16,37 +21,61 @@ def predict_water_demand(
             "predicted_daily_demand_liters": None,
             "forecast_days": forecast_days,
             "daily_predictions": [],
-            "method": "weighted_average",
+            "method": "weather_adjusted_weighted_average",
         }
 
     if any(value < 0 for value in consumption_history):
         raise ValueError("Consumption values cannot be negative")
 
-    # Use at most the latest 7 observations.
-    recent_history = consumption_history[-7:]
+    if forecast_temperatures_c is not None and any(
+        not isinstance(temp, (int, float)) or temp != temp
+        for temp in forecast_temperatures_c
+    ):
+        raise ValueError("Forecast temperatures must be valid numbers")
 
-    # Give more weight to recent consumption.
+    recent_history = consumption_history[-7:]
     weights = list(range(1, len(recent_history) + 1))
     total_weight = sum(weights)
 
-    predicted_demand = sum(
+    baseline_demand = sum(
         value * weight
         for value, weight in zip(recent_history, weights)
     ) / total_weight
 
-    predicted_demand = round(predicted_demand, 2)
+    daily_predictions = []
 
-    daily_predictions = [
-        {
-            "day": day,
-            "predicted_demand_liters": predicted_demand,
-        }
-        for day in range(1, forecast_days + 1)
-    ]
+    for day in range(forecast_days):
+        if forecast_temperatures_c and day < len(forecast_temperatures_c):
+            temperature = forecast_temperatures_c[day]
+        else:
+            temperature = None
+
+        # Illustrative assumption:
+        # demand rises by 2% per degree above 30°C.
+        heat_adjustment_percent = (
+            max(0, temperature - 30) * 2
+            if temperature is not None
+            else 0
+        )
+
+        predicted_demand = baseline_demand * (
+            1 + heat_adjustment_percent / 100
+        )
+
+        daily_predictions.append({
+            "day": day + 1,
+            "predicted_demand_liters": round(predicted_demand, 2),
+            "temperature_c": temperature,
+            "heat_adjustment_percent": round(
+                heat_adjustment_percent, 2
+            ),
+        })
+
+    first_day_demand = daily_predictions[0]["predicted_demand_liters"]
 
     return {
         "prediction_status": "SUCCESS",
-        "predicted_daily_demand_liters": predicted_demand,
+        "predicted_daily_demand_liters": first_day_demand,
         "forecast_days": forecast_days,
         "daily_predictions": daily_predictions,
         "method": "weighted_average",

@@ -3,7 +3,7 @@
 const FORECAST = "https://api.open-meteo.com/v1/forecast";
 const AIR = "https://air-quality-api.open-meteo.com/v1/air-quality";
 const GEOCODING = "https://geocoding-api.open-meteo.com/v1/search";
-const REVERSE = "https://api.bigdatacloud.net/data/reverse-geocode-client";
+const REVERSE = "https://api-bdc.io/data/reverse-geocode-client";
 const WTTR = "https://wttr.in";
 
 export const CARDINALS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];

@@ -1,10 +1,121 @@
-const API_BASE = (import.meta.env.VITE_API_BASE || "/api").replace(/\/$/, "");
+const CONFIGURED_API_BASE = (import.meta.env.VITE_API_BASE || "").trim().replace(/\/$/, "");
+const API_BASE = CONFIGURED_API_BASE || "/api";
+const USE_BACKEND =
+  import.meta.env.DEV || /^https?:\/\//i.test(CONFIGURED_API_BASE);
+const LOCAL_HISTORY_KEY = "cure-water-risk-history";
 
 // Only needed when the backend runs with CURE_API_KEY set. It is a public
 // client-side value by design, exactly like the tile key.
 const API_KEY = (import.meta.env.VITE_API_KEY || "").trim();
 
 const REQUEST_TIMEOUT = 12000;
+
+function readLocalHistory() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LOCAL_HISTORY_KEY) || "[]");
+    return Array.isArray(saved) ? saved : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalHistory(history) {
+  try {
+    localStorage.setItem(LOCAL_HISTORY_KEY, JSON.stringify(history.slice(0, 100)));
+  } catch {
+    // Analysis still succeeds if the browser blocks local storage.
+  }
+}
+
+function localWaterHistory(limit = 8) {
+  const history = readLocalHistory().slice(0, limit);
+  return { count: history.length, history };
+}
+
+function localWaterRisk(payload) {
+  const history = payload.consumption_history.map(Number);
+  const average = history.reduce((sum, value) => sum + value, 0) / history.length;
+  const recent = history.slice(-7);
+  const weights = recent.map((_, index) => index + 1);
+  const weightedDemand =
+    recent.reduce((sum, value, index) => sum + value * weights[index], 0) /
+    weights.reduce((sum, weight) => sum + weight, 0);
+  const available = (payload.tank_capacity_liters * payload.tank_level_percent) / 100;
+  const trendDifference = history.at(-1) - history[0];
+  const trend =
+    average === 0
+      ? "STABLE"
+      : trendDifference > average * 0.05
+        ? "INCREASING"
+        : trendDifference < -average * 0.05
+          ? "DECREASING"
+          : "STABLE";
+  const maxTemperature = 30;
+  const heatAdjustment = 0;
+  const dailyDemand = weightedDemand * (1 + heatAdjustment / 100);
+  const runway = dailyDemand > 0 ? available / dailyDemand : null;
+  const riskLevel =
+    runway == null ? "WATCH" : runway < 2 ? "HIGH" : runway < 4 ? "WATCH" : "LOW";
+  const riskReason =
+    runway == null
+      ? "Risk cannot be fully assessed because consumption data shows zero usage."
+      : runway < 2
+        ? `Water runway is only ${runway.toFixed(2)} days.`
+        : runway < 4
+          ? `Water runway is ${runway.toFixed(2)} days and requires closer monitoring.`
+          : `Water runway is ${runway.toFixed(2)} days based on predicted consumption.`;
+  const recommendation =
+    runway == null
+      ? "Consumption data shows zero usage. Verify consumption data before making a tanker decision."
+      : runway < 2
+        ? "Plan a tanker immediately."
+        : runway < 4
+          ? "Review tanker planning soon."
+          : "Current water supply appears stable.";
+  const result = {
+    available_water_liters: Math.round(available * 100) / 100,
+    average_daily_consumption_liters: Math.round(average * 100) / 100,
+    consumption_trend: trend,
+    projected_daily_consumption_liters: Math.round(dailyDemand * 100) / 100,
+    predicted_daily_demand_liters: Math.round(weightedDemand * 100) / 100,
+    demand_forecast: Array.from({ length: 7 }, (_, index) => ({
+      day: index + 1,
+      predicted_demand_liters: Math.round(weightedDemand * 100) / 100,
+      temperature_c: null,
+      heat_adjustment_percent: 0,
+    })),
+    demand_prediction_status: "SUCCESS",
+    days_of_history: history.length,
+    max_temperature_c: maxTemperature,
+    heat_warning: false,
+    heat_adjustment_percent: heatAdjustment,
+    water_runway_days: runway == null ? null : Math.round(runway * 100) / 100,
+    risk_level: riskLevel,
+    risk_reason: riskReason,
+    recommendation,
+    consumption_history: history,
+    weather_source: "not-used-local-analysis",
+    max_temperature_window_c: maxTemperature,
+    history_id: null,
+    ai_advice: `Local calculation: ${riskReason}`,
+    ai_backend: "deterministic",
+    analysis_source: "browser",
+  };
+
+  const previous = readLocalHistory();
+  saveLocalHistory([
+    {
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+      available_water_liters: result.available_water_liters,
+      tank_level_percent: payload.tank_level_percent,
+      water_runway_days: result.water_runway_days,
+      risk_level: result.risk_level,
+    },
+    ...previous,
+  ]);
+  return result;
+}
 
 export class ApiError extends Error {
   constructor(message, status) {
@@ -29,6 +140,7 @@ async function request(path, { timeout = REQUEST_TIMEOUT, signal, ...init } = {}
         ...(init.headers || {}),
       },
     });
+
     if (!response.ok) {
       throw new ApiError(`Request failed with ${response.status}`, response.status);
     }
@@ -40,7 +152,7 @@ async function request(path, { timeout = REQUEST_TIMEOUT, signal, ...init } = {}
 }
 
 export const api = {
-  base: API_BASE,
+  base: USE_BACKEND ? API_BASE : "local browser calculation",
 
   health() {
     return request("/health", { timeout: 2500 });
@@ -82,6 +194,7 @@ export const api = {
   },
 
   waterRisk(payload) {
+    if (!USE_BACKEND) return Promise.resolve(localWaterRisk(payload));
     return request("/water/risk", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -90,6 +203,7 @@ export const api = {
   },
 
   waterHistory(limit = 8) {
+    if (!USE_BACKEND) return Promise.resolve(localWaterHistory(limit));
     return request(`/water/history?limit=${encodeURIComponent(limit)}`);
   },
 };

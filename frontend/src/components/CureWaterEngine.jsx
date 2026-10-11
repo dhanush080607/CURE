@@ -119,7 +119,11 @@ export default function CureWaterEngine() {
           {
             label: "Water runway",
             value: result ? <RunwayCell days={result.water_runway_days} /> : "—",
-            sub: result ? "from backend result" : "run analysis to compute",
+            sub: result
+              ? result.analysis_source === "browser"
+                ? "calculated on this device"
+                : "from backend result"
+              : "run analysis to compute",
             tone: "var(--accent)",
           },
           {
@@ -319,7 +323,15 @@ export default function CureWaterEngine() {
           {loading ? "Running analysis…" : "Run risk analysis"}
         </button>
         <span className="text-[11px]" style={{ color: "var(--ink-3)" }}>
-          Posts to <span className="num">{api.base}/water/risk</span>
+          {api.base === "local browser calculation" ? (
+            <>
+              Runs locally; history is saved in this browser. Live weather requires a configured backend.
+            </>
+          ) : (
+            <>
+              Posts to <span className="num">{api.base}/water/risk</span>
+            </>
+          )}
         </span>
       </div>
 
