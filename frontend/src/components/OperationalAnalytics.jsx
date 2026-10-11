@@ -32,14 +32,14 @@ export default function OperationalAnalytics({ weather }) {
 
   return (
     <section className="card overflow-hidden p-5">
-      <header className="flex items-start justify-between gap-2">
+      <header className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="section-title">Diagnostics</h2>
           <p className="mt-0.5 text-[10px]" style={{ color: "var(--ink-3)" }}>
             24-hour profile
           </p>
         </div>
-        <div className="segment shrink-0">
+        <div className="segment max-w-full flex-wrap">
           {Object.entries(METRICS).map(([key, m]) => (
             <button
               key={key}
